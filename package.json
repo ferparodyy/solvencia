@@ -1,0 +1,11 @@
+{
+  "name": "solvencia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Diagnóstico de solvencia en asesoría: herramienta web para asesores, sin dependencias ni backend.",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "start": "node --version && echo 'Abre index.html en el navegador, o sirve la carpeta:' && python3 -m http.server 8080"
+  },
+  "license": "UNLICENSED"
+}
