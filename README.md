@@ -17,7 +17,16 @@ Todo editable: los requisitos cambian según destino, programa y perfil.
 mensual, apoyo familiar y aporte del patrocinador, otros recursos y pago inicial disponible.
 No se piden ni se guardan números de cuenta, extractos ni información bancaria.
 
-**3. Resultado en tiempo real** — el panel derecho se recalcula con cada tecla:
+**3. Resultado en tiempo real** — el panel derecho responde primero la pregunta que importa:
+**¿se puede iniciar hoy?**
+
+- **Veredicto**: cuánto vale la reserva, cuánto tiene disponible el estudiante, cuánto falta, y
+  en cuántas semanas o meses lo completaría al ritmo de ahorro que declaró. Cuatro estados:
+  sí puede hoy / está muy cerca (cubre 60 % o más) / hoy no alcanza / falta el valor del programa.
+- **Qué alcanza hoy**: con el pago inicial declarado, qué se puede pagar y qué no.
+- **Tu ruta, paso a paso**: reservar → completar el valor del programa → acreditar los fondos →
+  documentos → procesos y visado → viajar. Cada paso con su monto, su momento y su estado.
+- **Los números detrás**, para sustentar la ruta:
 
 | Cifra | Cómo sale |
 |---|---|
@@ -26,6 +35,7 @@ No se piden ni se guardan números de cuenta, extractos ni información bancaria
 | Ahorro mensual de referencia | diferencia ÷ meses hasta el viaje |
 | Proyección a la fecha de viaje | recursos actuales + (capacidad mensual × meses) |
 | Interpretación | estado según si la proyección alcanza la cifra de referencia |
+| Reserva | valor del programa × porcentaje de reserva (25 % por defecto) |
 
 **4. ¿Cómo podemos avanzar?** — tres rutas, con la sugerencia calculada a partir del pago inicial:
 
@@ -66,7 +76,9 @@ varios equipos, usar **Exportar CSV** o el **Respaldo JSON** (que se puede reimp
 - **Fondos de referencia**: los digita el asesor según lo validado por el departamento de procesos.
   Hay un campo de fuente/nota para dejar constancia de la versión usada.
 - **Tasas de cambio**: USD y EUR se digitan a mano, con su fecha. La herramienta no consulta
-  tasas en línea; si falta la tasa, avisa en vez de asumir un valor.
+  tasas en línea; si falta la tasa, avisa en vez de asumir un valor. Elegir un destino **no**
+  cambia la moneda de los montos: solo sugiere cuál se suele usar, y si hay una cifra grande
+  digitada en moneda extranjera la herramienta pregunta si de verdad es así.
 - El resultado siempre cierra con el aviso de que son cifras ilustrativas y no una evaluación migratoria.
 
 ## Estructura
@@ -76,16 +88,19 @@ index.html          Interfaz completa
 assets/styles.css   Estilos (claro/oscuro, móvil, impresión)
 js/config.js        Catálogos editables: destinos, tipos de programa, documentos, guion
 js/calc.js          Motor de cálculo (funciones puras, sin DOM)
+js/ruta.js          Veredicto de "¿se puede hoy?" y los pasos de la ruta
 js/storage.js       localStorage: borrador, registros, indicadores
 js/resumen.js       Formatos de moneda/fecha y armado del resumen y del CSV
 js/app.js           Wiring de la interfaz
-tests/calc.test.cjs Pruebas del motor de cálculo
+dist/demo.html      Build de un solo archivo (node tools/build-demo.js)
+tests/              Pruebas del motor de cálculo y de la ruta
 ```
 
 ## Desarrollo
 
 ```bash
-npm test                  # 15 pruebas del motor de cálculo (node --test, sin dependencias)
+npm test                  # 26 pruebas (node --test, sin dependencias)
+node tools/build-demo.js  # regenera dist/demo.html
 python3 -m http.server 8080   # opcional: servir la carpeta
 ```
 

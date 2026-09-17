@@ -70,8 +70,8 @@
             <span>Destino</span>
             <select id="destino"></select>
           </label>
-          <label class="field">
-            <span>Destino (si es otro)</span>
+          <label class="field" id="campo-destino-otro" hidden>
+            <span>¿Cuál destino?</span>
             <input type="text" id="destinoOtro" placeholder="Escríbelo aquí" autocomplete="off">
           </label>
           <label class="field">
@@ -132,6 +132,7 @@
             </div>
             <small class="hint" id="hint-fondos">Según la información validada por el departamento de procesos.</small>
           </label>
+          <p class="hint aviso-moneda" id="sugerencia-moneda"></p>
           <label class="field">
             <span>Fuente / nota del requisito</span>
             <input type="text" id="fuenteFondos" placeholder="Ej. actualizado por procesos el dd/mm/aaaa" autocomplete="off">
@@ -371,9 +372,28 @@
         <p class="solo-impresion" id="res-ficha"></p>
       </div>
 
-      <div class="estado" id="res-estado"><span class="estado__punto"></span><span id="res-estado-texto">Falta el dato de referencia</span></div>
+      <!-- ¿Se puede hoy? -->
+      <section class="veredicto" id="veredicto" data-nivel="sin_valor">
+        <p class="veredicto__etq">Para iniciar hoy necesitas</p>
+        <p class="veredicto__monto" id="ver-monto">—</p>
+        <p class="veredicto__sub" id="ver-sub">Reserva del 25 % del valor del programa</p>
+        <div class="veredicto__barra" aria-hidden="true"><span id="ver-fill"></span></div>
+        <p class="veredicto__cuenta" id="ver-cuenta">—</p>
+        <p class="veredicto__titulo" id="ver-titulo">—</p>
+        <p class="veredicto__accion" id="ver-accion"></p>
+      </section>
 
-      <dl class="cifras">
+      <!-- Qué alcanza hoy -->
+      <ul class="alcance" id="alcance"></ul>
+
+      <!-- La ruta -->
+      <h3>Tu ruta, paso a paso</h3>
+      <ol class="ruta" id="ruta"></ol>
+
+      <!-- Cifras de respaldo -->
+      <h3>Los números detrás</h3>
+      <dl class="cifras cifras--resumen">
+        <div><dt>Valor del programa</dt><dd id="res-programa">$0</dd></div>
         <div><dt>Fondos de referencia</dt><dd id="res-fondos">$0</dd></div>
         <div><dt>Recursos actuales</dt><dd id="res-recursos">$0</dd></div>
         <div class="cifras__destacada"><dt>Diferencia por preparar</dt><dd id="res-diferencia">$0</dd></div>
@@ -382,13 +402,14 @@
       <div class="barra" aria-hidden="true"><div class="barra__fill" id="res-barra"></div></div>
       <p class="hint" id="res-cobertura">0 % de la cifra de referencia</p>
 
-      <h3>Plan de preparación</h3>
       <dl class="cifras cifras--plan">
         <div><dt>Meses hasta el viaje</dt><dd id="res-meses">0</dd></div>
         <div><dt>Ahorro mensual de referencia</dt><dd id="res-ahorro">$0</dd></div>
         <div><dt>Capacidad declarada</dt><dd id="res-capacidad">$0</dd></div>
         <div><dt>Proyección a la fecha de viaje</dt><dd id="res-proyeccion">$0</dd></div>
       </dl>
+
+      <div class="estado" id="res-estado"><span class="estado__punto"></span><span id="res-estado-texto">Falta el dato de referencia</span></div>
 
       <div class="interpretacion">
         <h3>Interpretación</h3>
@@ -415,6 +436,7 @@
 
 <script src="js/config.js"></script>
 <script src="js/calc.js"></script>
+<script src="js/ruta.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/resumen.js"></script>
 <script src="js/app.js"></script>

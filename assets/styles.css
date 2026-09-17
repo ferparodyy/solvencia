@@ -144,6 +144,8 @@ textarea { resize: vertical; }
 .inline .moneda { max-width: 92px; }
 .money { font-variant-numeric: tabular-nums; }
 
+.aviso-moneda:not(:empty) { grid-column: 1 / -1; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--brand-soft); color: var(--brand); }
+
 .tasas { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; margin: 6px 0 0; }
 .tasas legend { font-size: .8rem; font-weight: 700; color: var(--muted); padding: 0 6px; }
 
@@ -175,6 +177,67 @@ textarea { resize: vertical; }
 .estado[data-tono="ok"] { background: var(--ok-soft); color: var(--ok); }
 .estado[data-tono="alerta"] { background: var(--alerta-soft); color: var(--alerta); }
 .estado[data-tono="riesgo"] { background: var(--riesgo-soft); color: var(--riesgo); }
+
+/* ---------- veredicto: ¿se puede hoy? ---------- */
+.veredicto {
+  border-radius: 14px; padding: 18px; margin-bottom: 14px;
+  background: var(--brand-soft); border: 1px solid transparent;
+}
+.veredicto__etq { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px; }
+.veredicto__monto { font-size: 2.4rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; margin: 0 0 4px; color: var(--brand); }
+.veredicto__sub { font-size: .84rem; color: var(--muted); margin: 0 0 12px; }
+.veredicto__barra { height: 10px; border-radius: 999px; background: rgba(148, 163, 184, .28); overflow: hidden; }
+.veredicto__barra span { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .25s ease; }
+.veredicto__cuenta { font-size: .84rem; color: var(--muted); margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
+.veredicto__titulo { font-size: 1.05rem; font-weight: 700; margin: 0 0 4px; }
+.veredicto__accion { font-size: .88rem; margin: 0; color: var(--muted); }
+
+.veredicto[data-nivel="puede"] { background: var(--ok-soft); }
+.veredicto[data-nivel="puede"] .veredicto__monto,
+.veredicto[data-nivel="puede"] .veredicto__titulo { color: var(--ok); }
+.veredicto[data-nivel="puede"] .veredicto__barra span { background: var(--ok); }
+.veredicto[data-nivel="cerca"] { background: var(--alerta-soft); }
+.veredicto[data-nivel="cerca"] .veredicto__monto,
+.veredicto[data-nivel="cerca"] .veredicto__titulo { color: var(--alerta); }
+.veredicto[data-nivel="cerca"] .veredicto__barra span { background: var(--alerta); }
+.veredicto[data-nivel="no_hoy"] .veredicto__monto,
+.veredicto[data-nivel="no_hoy"] .veredicto__titulo { color: var(--text); }
+.veredicto[data-nivel="no_hoy"] { background: var(--surface-2); border-color: var(--line); }
+.veredicto[data-nivel="sin_valor"] { background: var(--surface-2); border-color: var(--line); }
+.veredicto[data-nivel="sin_valor"] .veredicto__monto { color: var(--muted); }
+
+/* ---------- qué alcanza hoy ---------- */
+.alcance { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; }
+.alcance__titulo { font-size: .8rem; font-weight: 700; color: var(--muted); }
+.alcance__item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: .86rem; }
+.alcance__item span:nth-child(2) { flex: 1; }
+.alcance__item strong { font-variant-numeric: tabular-nums; }
+.alcance__marca { width: 20px; height: 20px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; font-size: .7rem; font-weight: 700; }
+.alcance__item[data-ok="true"] { border-color: var(--ok); }
+.alcance__item[data-ok="true"] .alcance__marca { background: var(--ok-soft); color: var(--ok); }
+.alcance__item[data-ok="false"] .alcance__marca { background: var(--surface-2); color: var(--muted); }
+.alcance__item[data-ok="false"] { color: var(--muted); }
+
+/* ---------- ruta paso a paso ---------- */
+.ruta { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 0; }
+.paso { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 0 0 16px; position: relative; }
+.paso::before {
+  content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--line);
+}
+.paso:last-child::before { display: none; }
+.paso__n {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .82rem; font-weight: 700; background: var(--surface-2); color: var(--muted);
+  border: 1px solid var(--line); position: relative; z-index: 1;
+}
+.paso[data-estado="listo"] .paso__n { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.paso[data-estado="en_curso"] .paso__n { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.paso[data-estado="meta"] .paso__n { background: var(--brand); color: #fff; border-color: var(--brand); }
+.paso__fila { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.paso__cuerpo h4 { margin: 4px 0 2px; font-size: .96rem; }
+.paso__monto { font-variant-numeric: tabular-nums; font-size: .96rem; }
+.paso__cuando { margin: 0 0 4px; font-size: .74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--brand); }
+.paso__detalle { margin: 0; font-size: .85rem; color: var(--muted); }
 
 .cifras { margin: 0 0 12px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .cifras > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--surface); padding: 11px 14px; }
@@ -267,9 +330,18 @@ body[data-modo="estudiante"] .cifras__destacada dd { font-size: 1.6rem; }
 body[data-modo="estudiante"] .resultado__cabecera h2 { font-size: 1.6rem; }
 body[data-modo="estudiante"] .acciones-resumen { justify-content: center; }
 body[data-modo="estudiante"] .cifras { grid-template-columns: 1fr 1fr; }
+body[data-modo="estudiante"] .cifras--resumen { grid-template-columns: repeat(3, 1fr); }
+body[data-modo="estudiante"] .veredicto { padding: 28px; }
+body[data-modo="estudiante"] .veredicto__monto { font-size: 3.2rem; }
+body[data-modo="estudiante"] .veredicto__titulo { font-size: 1.3rem; }
+body[data-modo="estudiante"] .paso__cuerpo h4 { font-size: 1.05rem; }
+body[data-modo="estudiante"] .paso__detalle { font-size: .92rem; }
 body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
 
 /* ---------- responsive ---------- */
+@media (max-width: 760px) {
+  body[data-modo="estudiante"] .cifras--resumen { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 1020px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .panel-resultado { position: static; }
@@ -280,7 +352,8 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
   .topbar { padding: 10px 12px; }
   .topbar__acciones { width: 100%; }
   .topbar__acciones .btn { flex: 1; }
-  body[data-modo="estudiante"] .cifras { grid-template-columns: 1fr; }
+  body[data-modo="estudiante"] .cifras,
+  body[data-modo="estudiante"] .cifras--resumen { grid-template-columns: 1fr; }
 }
 
 .solo-impresion { display: none; }
@@ -291,7 +364,7 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
   body { background: #fff; }
   .layout { display: block; padding: 0; max-width: none; }
   .resultado { border: 0; box-shadow: none; padding: 0; }
-  .cifras > div { break-inside: avoid; }
+  .cifras > div, .paso { break-inside: avoid; }
   .solo-impresion { display: block; font-size: .85rem; color: #475569; margin-bottom: 14px; }
   .resultado__cabecera h2 { font-size: 1.4rem; }
 }

@@ -9,7 +9,7 @@ const leer = (p) => fs.readFileSync(path.join(raiz, p), 'utf8');
 
 const html = leer('index.html');
 const css = leer('assets/styles.css');
-const js = ['js/config.js', 'js/calc.js', 'js/storage.js', 'js/resumen.js', 'js/app.js'].map(leer).join('\n');
+const js = ['js/config.js', 'js/calc.js', 'js/ruta.js', 'js/storage.js', 'js/resumen.js', 'js/app.js'].map(leer).join('\n');
 
 const cuerpo = html
   .slice(html.indexOf('<body'), html.lastIndexOf('</body>'))

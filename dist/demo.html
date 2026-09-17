@@ -146,6 +146,8 @@ textarea { resize: vertical; }
 .inline .moneda { max-width: 92px; }
 .money { font-variant-numeric: tabular-nums; }
 
+.aviso-moneda:not(:empty) { grid-column: 1 / -1; margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--brand-soft); color: var(--brand); }
+
 .tasas { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; margin: 6px 0 0; }
 .tasas legend { font-size: .8rem; font-weight: 700; color: var(--muted); padding: 0 6px; }
 
@@ -177,6 +179,67 @@ textarea { resize: vertical; }
 .estado[data-tono="ok"] { background: var(--ok-soft); color: var(--ok); }
 .estado[data-tono="alerta"] { background: var(--alerta-soft); color: var(--alerta); }
 .estado[data-tono="riesgo"] { background: var(--riesgo-soft); color: var(--riesgo); }
+
+/* ---------- veredicto: ¿se puede hoy? ---------- */
+.veredicto {
+  border-radius: 14px; padding: 18px; margin-bottom: 14px;
+  background: var(--brand-soft); border: 1px solid transparent;
+}
+.veredicto__etq { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 2px; }
+.veredicto__monto { font-size: 2.4rem; font-weight: 800; line-height: 1.05; font-variant-numeric: tabular-nums; margin: 0 0 4px; color: var(--brand); }
+.veredicto__sub { font-size: .84rem; color: var(--muted); margin: 0 0 12px; }
+.veredicto__barra { height: 10px; border-radius: 999px; background: rgba(148, 163, 184, .28); overflow: hidden; }
+.veredicto__barra span { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .25s ease; }
+.veredicto__cuenta { font-size: .84rem; color: var(--muted); margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
+.veredicto__titulo { font-size: 1.05rem; font-weight: 700; margin: 0 0 4px; }
+.veredicto__accion { font-size: .88rem; margin: 0; color: var(--muted); }
+
+.veredicto[data-nivel="puede"] { background: var(--ok-soft); }
+.veredicto[data-nivel="puede"] .veredicto__monto,
+.veredicto[data-nivel="puede"] .veredicto__titulo { color: var(--ok); }
+.veredicto[data-nivel="puede"] .veredicto__barra span { background: var(--ok); }
+.veredicto[data-nivel="cerca"] { background: var(--alerta-soft); }
+.veredicto[data-nivel="cerca"] .veredicto__monto,
+.veredicto[data-nivel="cerca"] .veredicto__titulo { color: var(--alerta); }
+.veredicto[data-nivel="cerca"] .veredicto__barra span { background: var(--alerta); }
+.veredicto[data-nivel="no_hoy"] .veredicto__monto,
+.veredicto[data-nivel="no_hoy"] .veredicto__titulo { color: var(--text); }
+.veredicto[data-nivel="no_hoy"] { background: var(--surface-2); border-color: var(--line); }
+.veredicto[data-nivel="sin_valor"] { background: var(--surface-2); border-color: var(--line); }
+.veredicto[data-nivel="sin_valor"] .veredicto__monto { color: var(--muted); }
+
+/* ---------- qué alcanza hoy ---------- */
+.alcance { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 6px; }
+.alcance__titulo { font-size: .8rem; font-weight: 700; color: var(--muted); }
+.alcance__item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: .86rem; }
+.alcance__item span:nth-child(2) { flex: 1; }
+.alcance__item strong { font-variant-numeric: tabular-nums; }
+.alcance__marca { width: 20px; height: 20px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; font-size: .7rem; font-weight: 700; }
+.alcance__item[data-ok="true"] { border-color: var(--ok); }
+.alcance__item[data-ok="true"] .alcance__marca { background: var(--ok-soft); color: var(--ok); }
+.alcance__item[data-ok="false"] .alcance__marca { background: var(--surface-2); color: var(--muted); }
+.alcance__item[data-ok="false"] { color: var(--muted); }
+
+/* ---------- ruta paso a paso ---------- */
+.ruta { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 0; }
+.paso { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 0 0 16px; position: relative; }
+.paso::before {
+  content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--line);
+}
+.paso:last-child::before { display: none; }
+.paso__n {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .82rem; font-weight: 700; background: var(--surface-2); color: var(--muted);
+  border: 1px solid var(--line); position: relative; z-index: 1;
+}
+.paso[data-estado="listo"] .paso__n { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+.paso[data-estado="en_curso"] .paso__n { background: var(--brand-soft); color: var(--brand); border-color: var(--brand); }
+.paso[data-estado="meta"] .paso__n { background: var(--brand); color: #fff; border-color: var(--brand); }
+.paso__fila { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.paso__cuerpo h4 { margin: 4px 0 2px; font-size: .96rem; }
+.paso__monto { font-variant-numeric: tabular-nums; font-size: .96rem; }
+.paso__cuando { margin: 0 0 4px; font-size: .74rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--brand); }
+.paso__detalle { margin: 0; font-size: .85rem; color: var(--muted); }
 
 .cifras { margin: 0 0 12px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .cifras > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--surface); padding: 11px 14px; }
@@ -269,9 +332,18 @@ body[data-modo="estudiante"] .cifras__destacada dd { font-size: 1.6rem; }
 body[data-modo="estudiante"] .resultado__cabecera h2 { font-size: 1.6rem; }
 body[data-modo="estudiante"] .acciones-resumen { justify-content: center; }
 body[data-modo="estudiante"] .cifras { grid-template-columns: 1fr 1fr; }
+body[data-modo="estudiante"] .cifras--resumen { grid-template-columns: repeat(3, 1fr); }
+body[data-modo="estudiante"] .veredicto { padding: 28px; }
+body[data-modo="estudiante"] .veredicto__monto { font-size: 3.2rem; }
+body[data-modo="estudiante"] .veredicto__titulo { font-size: 1.3rem; }
+body[data-modo="estudiante"] .paso__cuerpo h4 { font-size: 1.05rem; }
+body[data-modo="estudiante"] .paso__detalle { font-size: .92rem; }
 body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
 
 /* ---------- responsive ---------- */
+@media (max-width: 760px) {
+  body[data-modo="estudiante"] .cifras--resumen { grid-template-columns: 1fr 1fr; }
+}
 @media (max-width: 1020px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .panel-resultado { position: static; }
@@ -282,7 +354,8 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
   .topbar { padding: 10px 12px; }
   .topbar__acciones { width: 100%; }
   .topbar__acciones .btn { flex: 1; }
-  body[data-modo="estudiante"] .cifras { grid-template-columns: 1fr; }
+  body[data-modo="estudiante"] .cifras,
+  body[data-modo="estudiante"] .cifras--resumen { grid-template-columns: 1fr; }
 }
 
 .solo-impresion { display: none; }
@@ -293,7 +366,7 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
   body { background: #fff; }
   .layout { display: block; padding: 0; max-width: none; }
   .resultado { border: 0; box-shadow: none; padding: 0; }
-  .cifras > div { break-inside: avoid; }
+  .cifras > div, .paso { break-inside: avoid; }
   .solo-impresion { display: block; font-size: .85rem; color: #475569; margin-bottom: 14px; }
   .resultado__cabecera h2 { font-size: 1.4rem; }
 }
@@ -359,8 +432,8 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
             <span>Destino</span>
             <select id="destino"></select>
           </label>
-          <label class="field">
-            <span>Destino (si es otro)</span>
+          <label class="field" id="campo-destino-otro" hidden>
+            <span>¿Cuál destino?</span>
             <input type="text" id="destinoOtro" placeholder="Escríbelo aquí" autocomplete="off">
           </label>
           <label class="field">
@@ -421,6 +494,7 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
             </div>
             <small class="hint" id="hint-fondos">Según la información validada por el departamento de procesos.</small>
           </label>
+          <p class="hint aviso-moneda" id="sugerencia-moneda"></p>
           <label class="field">
             <span>Fuente / nota del requisito</span>
             <input type="text" id="fuenteFondos" placeholder="Ej. actualizado por procesos el dd/mm/aaaa" autocomplete="off">
@@ -660,9 +734,28 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
         <p class="solo-impresion" id="res-ficha"></p>
       </div>
 
-      <div class="estado" id="res-estado"><span class="estado__punto"></span><span id="res-estado-texto">Falta el dato de referencia</span></div>
+      <!-- ¿Se puede hoy? -->
+      <section class="veredicto" id="veredicto" data-nivel="sin_valor">
+        <p class="veredicto__etq">Para iniciar hoy necesitas</p>
+        <p class="veredicto__monto" id="ver-monto">—</p>
+        <p class="veredicto__sub" id="ver-sub">Reserva del 25 % del valor del programa</p>
+        <div class="veredicto__barra" aria-hidden="true"><span id="ver-fill"></span></div>
+        <p class="veredicto__cuenta" id="ver-cuenta">—</p>
+        <p class="veredicto__titulo" id="ver-titulo">—</p>
+        <p class="veredicto__accion" id="ver-accion"></p>
+      </section>
 
-      <dl class="cifras">
+      <!-- Qué alcanza hoy -->
+      <ul class="alcance" id="alcance"></ul>
+
+      <!-- La ruta -->
+      <h3>Tu ruta, paso a paso</h3>
+      <ol class="ruta" id="ruta"></ol>
+
+      <!-- Cifras de respaldo -->
+      <h3>Los números detrás</h3>
+      <dl class="cifras cifras--resumen">
+        <div><dt>Valor del programa</dt><dd id="res-programa">$0</dd></div>
         <div><dt>Fondos de referencia</dt><dd id="res-fondos">$0</dd></div>
         <div><dt>Recursos actuales</dt><dd id="res-recursos">$0</dd></div>
         <div class="cifras__destacada"><dt>Diferencia por preparar</dt><dd id="res-diferencia">$0</dd></div>
@@ -671,13 +764,14 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
       <div class="barra" aria-hidden="true"><div class="barra__fill" id="res-barra"></div></div>
       <p class="hint" id="res-cobertura">0 % de la cifra de referencia</p>
 
-      <h3>Plan de preparación</h3>
       <dl class="cifras cifras--plan">
         <div><dt>Meses hasta el viaje</dt><dd id="res-meses">0</dd></div>
         <div><dt>Ahorro mensual de referencia</dt><dd id="res-ahorro">$0</dd></div>
         <div><dt>Capacidad declarada</dt><dd id="res-capacidad">$0</dd></div>
         <div><dt>Proyección a la fecha de viaje</dt><dd id="res-proyeccion">$0</dd></div>
       </dl>
+
+      <div class="estado" id="res-estado"><span class="estado__punto"></span><span id="res-estado-texto">Falta el dato de referencia</span></div>
 
       <div class="interpretacion">
         <h3>Interpretación</h3>
@@ -883,6 +977,7 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
     var saldoDespuesCierreUsd = clampPos(reserva - cierreUsdCOP);
 
     return {
+      hoy: i.hoy || '',
       tasas: tasas,
       fondosReferencia: fondosReferencia,
       valorPrograma: valorPrograma,
@@ -980,6 +1075,139 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
     rutaComercial: rutaComercial,
     ESTADOS: ESTADOS
   };
+});
+
+/*
+ * Traduce el diagnóstico en una respuesta concreta: ¿se puede iniciar hoy?
+ * y ¿cuál es la ruta, paso por paso, hasta el viaje?
+ */
+(function (root, factory) {
+  var api = factory(root.SolvenciaCalc);
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SolvenciaRuta = api;
+})(typeof self !== 'undefined' ? self : globalThis, function (Calc) {
+  'use strict';
+
+  var SEMANAS_MES = 4.345;
+
+  /** ¿El pago inicial declarado alcanza para la reserva, hoy? */
+  function veredicto(r) {
+    var meta = r.reserva;
+    var tiene = r.pagoInicial;
+    var falta = Math.max(0, meta - tiene);
+    var cubierto = meta > 0 ? Math.min(1, tiene / meta) : 0;
+
+    var nivel;
+    if (meta <= 0) nivel = 'sin_valor';
+    else if (falta <= 0) nivel = 'puede';
+    else if (cubierto >= 0.6) nivel = 'cerca';
+    else nivel = 'no_hoy';
+
+    // ¿En cuánto tiempo juntaría lo que falta al ritmo de ahorro declarado?
+    var plazo = null;
+    if (falta > 0 && r.capacidadMensual > 0) {
+      var meses = falta / r.capacidadMensual;
+      plazo = meses < 0.9
+        ? { unidad: 'semanas', cantidad: Math.max(1, Math.ceil(meses * SEMANAS_MES)), meses: 1 }
+        : { unidad: 'meses', cantidad: Math.ceil(meses), meses: Math.ceil(meses) };
+    }
+
+    return {
+      nivel: nivel,
+      meta: meta,
+      tiene: tiene,
+      falta: falta,
+      cubierto: cubierto,
+      plazo: plazo,
+      fechaPosible: plazo ? Calc.sumarMeses(r.hoy || new Date().toISOString().slice(0, 10), plazo.meses) : ''
+    };
+  }
+
+  var TITULOS = {
+    sin_valor: 'Falta el valor del programa',
+    puede: 'Sí puedes iniciar hoy',
+    cerca: 'Estás muy cerca de poder iniciar hoy',
+    no_hoy: 'Hoy todavía no alcanza para la reserva'
+  };
+
+  /** Los pasos de la ruta, en orden, con monto y momento. */
+  function pasos(datos, r) {
+    var d = datos || {};
+    var v = veredicto(r);
+    var saldoPrograma = Math.max(0, r.valorPrograma - r.reserva);
+    var lista = [];
+
+    lista.push({
+      n: 1,
+      titulo: 'Reservar tu cupo',
+      cuando: 'Hoy',
+      monto: r.reserva,
+      estado: v.nivel === 'puede' ? 'listo' : 'pendiente',
+      detalle: r.porcentajeReserva + ' % del valor del programa. Confirma el cupo, inicia el proceso y permite congelar el valor del curso, según las condiciones comerciales.'
+    });
+
+    lista.push({
+      n: 2,
+      titulo: 'Completar el valor del programa',
+      cuando: 'Antes del viaje, según las condiciones de pago',
+      monto: saldoPrograma,
+      estado: 'pendiente',
+      detalle: 'Es el saldo del curso después de la reserva. Se define el plan de pagos en el contrato.'
+    });
+
+    lista.push({
+      n: 3,
+      titulo: 'Acreditar los fondos de referencia',
+      cuando: r.meses > 0 ? 'En los próximos ' + r.meses + ' meses' : 'Antes de radicar',
+      monto: r.fondosReferencia,
+      estado: r.diferencia <= 0 ? 'listo' : 'pendiente',
+      detalle: r.diferencia <= 0
+        ? 'Con lo que tienes hoy ya cubres la cifra de referencia.'
+        : 'Te faltan ' + Math.round(r.diferencia) + ' — son ' + Math.round(r.ahorroMensualReferencia) + ' al mes durante ' + r.meses + ' meses. Este dinero no se paga: se demuestra.'
+    });
+
+    lista.push({
+      n: 4,
+      titulo: 'Organizar tus documentos',
+      cuando: 'Mientras ahorras',
+      monto: 0,
+      estado: (d.documentos && d.documentos.length) ? 'en_curso' : 'pendiente',
+      detalle: (d.documentos && d.documentos.length)
+        ? 'Empieza por: ' + d.documentos.join(', ') + '.'
+        : 'Pasaporte, certificados de estudio, soportes de ingresos y del apoyo económico.'
+    });
+
+    lista.push({
+      n: 5,
+      titulo: 'Procesos y visado',
+      cuando: 'Cuando los fondos y los documentos estén listos',
+      monto: 0,
+      estado: 'pendiente',
+      detalle: 'El departamento de procesos revisa tu caso y arma la radicación.'
+    });
+
+    lista.push({
+      n: 6,
+      titulo: 'Viajar',
+      cuando: d.fechaViaje ? 'Fecha estimada' : 'Fecha por definir',
+      fecha: d.fechaViaje,
+      monto: 0,
+      estado: 'meta',
+      detalle: [d.destinoFinal, d.programa].filter(Boolean).join(' · ') || 'Destino por confirmar'
+    });
+
+    return lista;
+  }
+
+  /** Qué alcanza a hacer HOY con el pago inicial declarado. */
+  function alcanceHoy(r) {
+    return [
+      { id: 'reserva', etiqueta: 'Reservar el cupo (' + r.porcentajeReserva + ' %)', monto: r.reserva, alcanza: r.reserva > 0 && r.pagoInicial >= r.reserva },
+      { id: 'cierre_usd', etiqueta: 'Inicio con USD ' + r.montoCierreUsd, monto: r.cierreUsdCOP, alcanza: r.cierreUsdCOP > 0 && r.pagoInicial >= r.cierreUsdCOP }
+    ];
+  }
+
+  return { veredicto: veredicto, pasos: pasos, alcanceHoy: alcanceHoy, TITULOS: TITULOS };
 });
 
 /*
@@ -1104,10 +1332,10 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
 
 /* Formatos y armado del resumen de la asesoría (texto plano para WhatsApp, correo y descarga). */
 (function (root, factory) {
-  var api = factory(root.SolvenciaCalc, root.SolvenciaConfig);
+  var api = factory(root.SolvenciaCalc, root.SolvenciaConfig, root.SolvenciaRuta);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.SolvenciaResumen = api;
-})(typeof self !== 'undefined' ? self : globalThis, function (Calc, Config) {
+})(typeof self !== 'undefined' ? self : globalThis, function (Calc, Config, Ruta) {
   'use strict';
 
   var fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
@@ -1129,44 +1357,56 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
     return d ? d.etiqueta : 'Sin decisión en esta asesoría';
   }
 
+  /** Reemplaza montos crudos por moneda formateada dentro de un texto. */
+  function conMoneda(txt) {
+    return String(txt).replace(/(\d{4,})/g, function (m) { return money(parseInt(m, 10)); });
+  }
+
   /** Resumen en texto plano. `datos` = formulario, `r` = resultado de diagnosticar(). */
   function texto(datos, r, opciones) {
     var o = opciones || {};
     var i = Calc.interpretar(r);
+    var v = Ruta.veredicto(r);
     var L = [];
-    L.push('DIAGNÓSTICO DE SOLVENCIA — RESUMEN DE ASESORÍA');
+    L.push('TU RUTA DE ESTUDIO EN EL EXTERIOR');
     L.push('');
-    L.push('Estudiante: ' + (datos.estudiante || '—'));
-    L.push('Asesor: ' + (datos.asesor || '—'));
-    L.push('Fecha de la asesoría: ' + fecha(datos.hoy));
+    L.push((datos.estudiante || 'Estudiante') + ' · ' + (datos.destinoFinal || 'destino por definir'));
+    L.push('Asesor: ' + (datos.asesor || '—') + ' · ' + fecha(datos.hoy));
     L.push('');
-    L.push('PROYECTO');
-    L.push('- Destino: ' + (datos.destinoFinal || '—'));
-    L.push('- Programa: ' + [datos.tipoPrograma, datos.programa].filter(Boolean).join(' · ') + (datos.duracion ? ' (' + datos.duracion + ' ' + datos.duracionUnidad + ')' : ''));
-    L.push('- Fecha estimada de viaje: ' + fecha(datos.fechaViaje));
-    L.push('- Meses hasta el viaje: ' + r.meses);
-    L.push('- Valor estimado del programa: ' + money(r.valorPrograma));
+    L.push('PARA INICIAR HOY: ' + (v.meta > 0 ? money(v.meta) : 'falta el valor del programa'));
+    L.push('(reserva del ' + r.porcentajeReserva + ' % sobre ' + money(r.valorPrograma) + ')');
+    L.push('Disponible hoy: ' + money(v.tiene) + (v.falta > 0 ? ' · faltan ' + money(v.falta) : ' · alcanza'));
+    L.push('> ' + Ruta.TITULOS[v.nivel]);
+    if (v.falta > 0 && v.plazo) {
+      L.push('> Ahorrando ' + money(r.capacidadMensual) + ' al mes, lo completas en unas ' + v.plazo.cantidad + ' ' + v.plazo.unidad + ' (cerca del ' + fecha(v.fechaPosible) + ').');
+    }
+    L.push('');
+    L.push('TU RUTA, PASO A PASO');
+    Ruta.pasos(datos, r).forEach(function (p) {
+      var cuando = p.fecha ? fecha(p.fecha) : p.cuando;
+      L.push(p.n + '. ' + p.titulo + (p.monto > 0 ? ' — ' + money(p.monto) : '') + '  [' + cuando + ']');
+      L.push('   ' + conMoneda(p.detalle));
+    });
+    L.push('');
+    L.push('LOS NÚMEROS DETRÁS');
+    L.push('- Valor del programa: ' + money(r.valorPrograma) + (datos.duracion ? ' (' + datos.duracion + ' ' + datos.duracionUnidad + ')' : ''));
     L.push('- Fondos de referencia: ' + money(r.fondosReferencia) + (datos.fuenteFondos ? ' (' + datos.fuenteFondos + ')' : ''));
-    L.push('');
-    L.push('SITUACIÓN ACTUAL');
-    L.push('- Ahorros disponibles: ' + money(r.recursos.ahorros));
-    L.push('- Apoyo familiar: ' + (datos.apoyoFamiliar ? money(r.recursos.patrocinador) + (datos.patrocinadorRelacion ? ' (' + datos.patrocinadorRelacion + ')' : '') : 'No'));
-    L.push('- Otros recursos: ' + money(r.recursos.otros) + (datos.otrosDetalle ? ' (' + datos.otrosDetalle + ')' : ''));
     L.push('- Recursos actuales: ' + money(r.recursosActuales) + ' · ' + pct(r.cobertura) + ' de la referencia');
+    L.push('   ahorros ' + money(r.recursos.ahorros)
+      + ' · apoyo familiar ' + (datos.apoyoFamiliar ? money(r.recursos.patrocinador) : 'no')
+      + ' · otros ' + money(r.recursos.otros));
     L.push('- Diferencia por preparar: ' + money(r.diferencia));
-    L.push('');
-    L.push('PLAN DE PREPARACIÓN');
-    L.push('- Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia) + ' durante ' + r.meses + ' meses');
-    L.push('- Capacidad de ahorro declarada: ' + money(r.capacidadMensual) + ' al mes');
+    L.push('- Meses hasta el viaje: ' + r.meses + ' (viaje estimado ' + fecha(datos.fechaViaje) + ')');
+    L.push('- Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia));
+    L.push('- Capacidad declarada: ' + money(r.capacidadMensual) + ' al mes');
     L.push('- Proyección a la fecha de viaje: ' + money(r.proyeccionAlViaje));
     if (r.brechaProyectada > 0) L.push('- Faltante proyectado: ' + money(r.brechaProyectada));
-    if (r.mesesNecesarios != null) L.push('- Al ritmo declarado la diferencia se cubre en ' + r.mesesNecesarios + ' meses (aprox. ' + fecha(r.fechaSugerida) + ')');
     L.push('');
     L.push('INTERPRETACIÓN');
     L.push('- ' + i.etiqueta + ': ' + i.texto);
-    i.acciones.forEach(function (a) { L.push('- ' + a.replace(/(\d{4,})/g, function (m) { return miles(m); })); });
+    i.acciones.forEach(function (a) { L.push('- ' + conMoneda(a)); });
     L.push('');
-    L.push('CÓMO AVANZAR');
+    L.push('OPCIONES PARA AVANZAR');
     L.push('- Opción A · reserva del ' + r.porcentajeReserva + '%: ' + money(r.reserva));
     if (o.incluirUsd) {
       L.push('- Opción B · inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP) + ' (saldo hasta completar la reserva: ' + money(r.saldoDespuesCierreUsd) + ')');
@@ -1185,20 +1425,28 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
   /** Versión corta, pensada para WhatsApp. */
   function textoCorto(datos, r, opciones) {
     var o = opciones || {};
+    var v = Ruta.veredicto(r);
     var L = [];
-    L.push('Resumen de tu asesoría' + (datos.estudiante ? ', ' + datos.estudiante.split(' ')[0] : ''));
+    L.push('Tu ruta' + (datos.estudiante ? ', ' + datos.estudiante.split(' ')[0] : '') + ' — ' + (datos.destinoFinal || 'tu destino'));
     L.push('');
-    L.push('Destino: ' + (datos.destinoFinal || '—'));
-    L.push('Viaje estimado: ' + fecha(datos.fechaViaje) + ' (' + r.meses + ' meses)');
-    L.push('Fondos de referencia: ' + money(r.fondosReferencia));
-    L.push('Recursos actuales: ' + money(r.recursosActuales));
-    L.push('Diferencia por preparar: ' + money(r.diferencia));
-    L.push('Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia));
+    L.push('PARA INICIAR HOY: ' + money(v.meta) + ' (reserva del ' + r.porcentajeReserva + ' %)');
+    L.push('Tienes disponible: ' + money(v.tiene) + (v.falta > 0 ? ' · faltan ' + money(v.falta) : ' · alcanza'));
+    L.push(Ruta.TITULOS[v.nivel] + '.');
+    if (v.falta > 0 && v.plazo) L.push('Ahorrando ' + money(r.capacidadMensual) + '/mes lo completas en unas ' + v.plazo.cantidad + ' ' + v.plazo.unidad + '.');
     L.push('');
-    L.push('Para avanzar:');
-    L.push('A) Reserva del ' + r.porcentajeReserva + '%: ' + money(r.reserva));
-    if (o.incluirUsd) L.push('B) Inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP));
-    if (datos.proximaGestion) L.push('C) Próxima revisión: ' + fecha(datos.proximaGestion));
+    L.push('Después de reservar:');
+    L.push('2) Saldo del programa: ' + money(Math.max(0, r.valorPrograma - r.reserva)));
+    L.push('3) Acreditar fondos: ' + money(r.fondosReferencia) + (r.diferencia > 0 ? ' — te faltan ' + money(r.diferencia) + ', son ' + money(r.ahorroMensualReferencia) + '/mes por ' + r.meses + ' meses' : ' — ya los cubres'));
+    L.push('4) Documentos, procesos y visado');
+    L.push('5) Viaje: ' + fecha(datos.fechaViaje));
+    if (o.incluirUsd) {
+      L.push('');
+      L.push('Alternativa de inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP));
+    }
+    if (datos.proximaGestion) {
+      L.push('');
+      L.push('Próxima revisión: ' + fecha(datos.proximaGestion));
+    }
     L.push('');
     L.push(Config.aviso);
     return L.join('\n');
@@ -1228,6 +1476,7 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
   var Config = window.SolvenciaConfig;
   var Store = window.SolvenciaStore;
   var Res = window.SolvenciaResumen;
+  var Ruta = window.SolvenciaRuta;
 
   var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
   var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
@@ -1401,13 +1650,22 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
       : 'Se calcula con la fecha de viaje. Puedes sobrescribirlo.';
 
     // avisos de conversión
-    $('#hint-programa').textContent = d.monedaPrograma === 'COP' ? ''
-      : (tasaDe(d, d.monedaPrograma) ? 'Equivale a ' + Res.money(r.valorPrograma) : '⚠ Digita la tasa de ' + d.monedaPrograma + ' para convertir.');
-    var hintFondos = 'Según la información validada por el departamento de procesos.';
-    $('#hint-fondos').textContent = d.monedaFondos === 'COP' ? hintFondos
-      : (tasaDe(d, d.monedaFondos) ? hintFondos + ' Equivale a ' + Res.money(r.fondosReferencia) : '⚠ Digita la tasa de ' + d.monedaFondos + ' para convertir.');
+    $('#hint-programa').textContent = avisoMoneda(d, d.monedaPrograma, d.valorPrograma, r.valorPrograma, '');
+    $('#hint-fondos').textContent = avisoMoneda(d, d.monedaFondos, d.fondosReferencia, r.fondosReferencia,
+      'Según la información validada por el departamento de procesos.');
+
+    var opDestino = $('#destino').selectedOptions[0];
+    var monedaSugerida = opDestino && opDestino.dataset.moneda;
+    $('#sugerencia-moneda').textContent = monedaSugerida && monedaSugerida !== 'COP'
+      ? 'En ' + d.destino + ' los valores suelen cotizarse en ' + monedaSugerida + '. Cambia la moneda solo si digitaste la cifra en ' + monedaSugerida + '.'
+      : '';
+
+    renderVeredicto(d, r);
+    renderAlcance(r);
+    renderRuta(d, r);
 
     // cifras principales
+    $('#res-programa').textContent = Res.money(r.valorPrograma);
     $('#res-fondos').textContent = Res.money(r.fondosReferencia);
     $('#res-recursos').textContent = Res.money(r.recursosActuales);
     $('#res-diferencia').textContent = Res.money(r.diferencia);
@@ -1469,6 +1727,74 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
     Store.guardarBorrador(d);
     Store.guardarPrefs({ asesor: d.asesor, tasaUsd: d.tasaUsd, tasaEur: d.tasaEur, fechaTasa: d.fechaTasa });
     return { d: d, r: r };
+  }
+
+  function renderVeredicto(d, r) {
+    var v = Ruta.veredicto(r);
+    var box = $('#veredicto');
+    box.dataset.nivel = v.nivel;
+
+    $('#ver-monto').textContent = v.meta > 0 ? Res.money(v.meta) : '—';
+    $('#ver-sub').textContent = v.meta > 0
+      ? 'Reserva del ' + r.porcentajeReserva + ' % sobre ' + Res.money(r.valorPrograma)
+      : 'Digita el valor del programa para calcular la reserva';
+    $('#ver-fill').style.width = Math.round(v.cubierto * 100) + '%';
+    $('#ver-titulo').textContent = Ruta.TITULOS[v.nivel];
+
+    $('#ver-cuenta').textContent = v.meta > 0
+      ? 'Tienes disponible ' + Res.money(v.tiene) + (v.falta > 0 ? ' · te faltan ' + Res.money(v.falta) : ' · cubierto')
+      : '';
+
+    var accion = '';
+    if (v.nivel === 'puede') {
+      accion = 'Con lo que tienes disponible se puede firmar y dejar el cupo reservado en esta misma asesoría.';
+    } else if (v.falta > 0 && v.plazo) {
+      accion = 'Ahorrando ' + Res.money(r.capacidadMensual) + ' al mes, completas los ' + Res.money(v.falta)
+        + ' que faltan en unas ' + v.plazo.cantidad + ' ' + v.plazo.unidad + ' (cerca del ' + Res.fecha(v.fechaPosible) + ').';
+    } else if (v.falta > 0) {
+      accion = 'Para saber cuándo podrías reservar, falta registrar cuánto puedes ahorrar cada mes.';
+    }
+    $('#ver-accion').textContent = accion;
+  }
+
+  function renderAlcance(r) {
+    var ul = $('#alcance');
+    if (r.pagoInicial <= 0) { ul.innerHTML = ''; return; }
+    var items = Ruta.alcanceHoy(r).filter(function (x) {
+      return x.id !== 'cierre_usd' || estado.usdDesbloqueado;
+    });
+    ul.innerHTML = '<li class="alcance__titulo">Con los ' + Res.money(r.pagoInicial) + ' que puedes destinar hoy:</li>'
+      + items.map(function (x) {
+        return '<li class="alcance__item" data-ok="' + x.alcanza + '"><span class="alcance__marca">' + (x.alcanza ? '✔' : '✕') + '</span>'
+          + '<span>' + x.etiqueta + '</span><strong>' + (x.monto > 0 ? Res.money(x.monto) : '—') + '</strong></li>';
+      }).join('');
+  }
+
+  function renderRuta(d, r) {
+    var pasos = Ruta.pasos(d, r);
+    $('#ruta').innerHTML = pasos.map(function (p) {
+      var detalle = p.detalle.replace(/(\d{4,})/g, function (m) { return Res.money(parseInt(m, 10)); });
+      var cuando = p.fecha ? Res.fecha(p.fecha) : p.cuando;
+      return '<li class="paso" data-estado="' + p.estado + '">'
+        + '<span class="paso__n">' + p.n + '</span>'
+        + '<div class="paso__cuerpo">'
+        + '<div class="paso__fila"><h4>' + p.titulo + '</h4>'
+        + (p.monto > 0 ? '<strong class="paso__monto">' + Res.money(p.monto) + '</strong>' : '')
+        + '</div>'
+        + '<p class="paso__cuando">' + cuando + '</p>'
+        + '<p class="paso__detalle">' + detalle + '</p>'
+        + '</div></li>';
+    }).join('');
+  }
+
+  /* Una cifra grande digitada en moneda extranjera casi siempre es un error de moneda. */
+  function avisoMoneda(d, moneda, digitado, convertido, base) {
+    if (moneda === 'COP') return base;
+    if (!tasaDe(d, moneda)) return '⚠ Digita la tasa de ' + moneda + ' para convertir.';
+    if (digitado >= 1000000) {
+      return '⚠ ¿Son de verdad ' + Res.miles(digitado) + ' ' + moneda + '? Con la tasa digitada equivale a ' + Res.money(convertido) + '. Revisa la moneda.';
+    }
+    return (base ? base + ' ' : '') + 'Equivale a ' + Res.money(convertido) + '.';
   }
 
   function tasaDe(d, moneda) {
@@ -1705,12 +2031,8 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
     });
     document.addEventListener('change', function (e) {
       if (e.target.id === 'destino') {
-        var op = e.target.selectedOptions[0];
-        if (op && op.dataset.moneda) {
-          $('#monedaPrograma').value = op.dataset.moneda;
-          $('#monedaFondos').value = op.dataset.moneda;
-        }
-        $('#destinoOtro').hidden = false;
+        $('#campo-destino-otro').hidden = e.target.value !== 'Otro destino';
+        if (e.target.value === 'Otro destino') $('#destinoOtro').focus();
       }
       if (e.target.dataset && e.target.dataset.pago != null) {
         Store.marcarPago(e.target.dataset.pago, e.target.checked);
@@ -1831,6 +2153,7 @@ body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
       $('#fechaTasa').value = prefs.fechaTasa || hoyISO();
     }
     $('#tasaUsdEspejo').value = $('#tasaUsd').value;
+    $('#campo-destino-otro').hidden = $('#destino').value !== 'Otro destino';
     if (!Store.disponible()) aviso('Este navegador no permite guardar datos locales: usa Descargar para no perder el resumen.');
 
     render();

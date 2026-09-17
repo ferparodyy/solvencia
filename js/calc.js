@@ -101,6 +101,7 @@
     var saldoDespuesCierreUsd = clampPos(reserva - cierreUsdCOP);
 
     return {
+      hoy: i.hoy || '',
       tasas: tasas,
       fondosReferencia: fondosReferencia,
       valorPrograma: valorPrograma,

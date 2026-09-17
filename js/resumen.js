@@ -1,9 +1,9 @@
 /* Formatos y armado del resumen de la asesoría (texto plano para WhatsApp, correo y descarga). */
 (function (root, factory) {
-  var api = factory(root.SolvenciaCalc, root.SolvenciaConfig);
+  var api = factory(root.SolvenciaCalc, root.SolvenciaConfig, root.SolvenciaRuta);
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.SolvenciaResumen = api;
-})(typeof self !== 'undefined' ? self : globalThis, function (Calc, Config) {
+})(typeof self !== 'undefined' ? self : globalThis, function (Calc, Config, Ruta) {
   'use strict';
 
   var fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
@@ -25,44 +25,56 @@
     return d ? d.etiqueta : 'Sin decisión en esta asesoría';
   }
 
+  /** Reemplaza montos crudos por moneda formateada dentro de un texto. */
+  function conMoneda(txt) {
+    return String(txt).replace(/(\d{4,})/g, function (m) { return money(parseInt(m, 10)); });
+  }
+
   /** Resumen en texto plano. `datos` = formulario, `r` = resultado de diagnosticar(). */
   function texto(datos, r, opciones) {
     var o = opciones || {};
     var i = Calc.interpretar(r);
+    var v = Ruta.veredicto(r);
     var L = [];
-    L.push('DIAGNÓSTICO DE SOLVENCIA — RESUMEN DE ASESORÍA');
+    L.push('TU RUTA DE ESTUDIO EN EL EXTERIOR');
     L.push('');
-    L.push('Estudiante: ' + (datos.estudiante || '—'));
-    L.push('Asesor: ' + (datos.asesor || '—'));
-    L.push('Fecha de la asesoría: ' + fecha(datos.hoy));
+    L.push((datos.estudiante || 'Estudiante') + ' · ' + (datos.destinoFinal || 'destino por definir'));
+    L.push('Asesor: ' + (datos.asesor || '—') + ' · ' + fecha(datos.hoy));
     L.push('');
-    L.push('PROYECTO');
-    L.push('- Destino: ' + (datos.destinoFinal || '—'));
-    L.push('- Programa: ' + [datos.tipoPrograma, datos.programa].filter(Boolean).join(' · ') + (datos.duracion ? ' (' + datos.duracion + ' ' + datos.duracionUnidad + ')' : ''));
-    L.push('- Fecha estimada de viaje: ' + fecha(datos.fechaViaje));
-    L.push('- Meses hasta el viaje: ' + r.meses);
-    L.push('- Valor estimado del programa: ' + money(r.valorPrograma));
+    L.push('PARA INICIAR HOY: ' + (v.meta > 0 ? money(v.meta) : 'falta el valor del programa'));
+    L.push('(reserva del ' + r.porcentajeReserva + ' % sobre ' + money(r.valorPrograma) + ')');
+    L.push('Disponible hoy: ' + money(v.tiene) + (v.falta > 0 ? ' · faltan ' + money(v.falta) : ' · alcanza'));
+    L.push('> ' + Ruta.TITULOS[v.nivel]);
+    if (v.falta > 0 && v.plazo) {
+      L.push('> Ahorrando ' + money(r.capacidadMensual) + ' al mes, lo completas en unas ' + v.plazo.cantidad + ' ' + v.plazo.unidad + ' (cerca del ' + fecha(v.fechaPosible) + ').');
+    }
+    L.push('');
+    L.push('TU RUTA, PASO A PASO');
+    Ruta.pasos(datos, r).forEach(function (p) {
+      var cuando = p.fecha ? fecha(p.fecha) : p.cuando;
+      L.push(p.n + '. ' + p.titulo + (p.monto > 0 ? ' — ' + money(p.monto) : '') + '  [' + cuando + ']');
+      L.push('   ' + conMoneda(p.detalle));
+    });
+    L.push('');
+    L.push('LOS NÚMEROS DETRÁS');
+    L.push('- Valor del programa: ' + money(r.valorPrograma) + (datos.duracion ? ' (' + datos.duracion + ' ' + datos.duracionUnidad + ')' : ''));
     L.push('- Fondos de referencia: ' + money(r.fondosReferencia) + (datos.fuenteFondos ? ' (' + datos.fuenteFondos + ')' : ''));
-    L.push('');
-    L.push('SITUACIÓN ACTUAL');
-    L.push('- Ahorros disponibles: ' + money(r.recursos.ahorros));
-    L.push('- Apoyo familiar: ' + (datos.apoyoFamiliar ? money(r.recursos.patrocinador) + (datos.patrocinadorRelacion ? ' (' + datos.patrocinadorRelacion + ')' : '') : 'No'));
-    L.push('- Otros recursos: ' + money(r.recursos.otros) + (datos.otrosDetalle ? ' (' + datos.otrosDetalle + ')' : ''));
     L.push('- Recursos actuales: ' + money(r.recursosActuales) + ' · ' + pct(r.cobertura) + ' de la referencia');
+    L.push('   ahorros ' + money(r.recursos.ahorros)
+      + ' · apoyo familiar ' + (datos.apoyoFamiliar ? money(r.recursos.patrocinador) : 'no')
+      + ' · otros ' + money(r.recursos.otros));
     L.push('- Diferencia por preparar: ' + money(r.diferencia));
-    L.push('');
-    L.push('PLAN DE PREPARACIÓN');
-    L.push('- Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia) + ' durante ' + r.meses + ' meses');
-    L.push('- Capacidad de ahorro declarada: ' + money(r.capacidadMensual) + ' al mes');
+    L.push('- Meses hasta el viaje: ' + r.meses + ' (viaje estimado ' + fecha(datos.fechaViaje) + ')');
+    L.push('- Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia));
+    L.push('- Capacidad declarada: ' + money(r.capacidadMensual) + ' al mes');
     L.push('- Proyección a la fecha de viaje: ' + money(r.proyeccionAlViaje));
     if (r.brechaProyectada > 0) L.push('- Faltante proyectado: ' + money(r.brechaProyectada));
-    if (r.mesesNecesarios != null) L.push('- Al ritmo declarado la diferencia se cubre en ' + r.mesesNecesarios + ' meses (aprox. ' + fecha(r.fechaSugerida) + ')');
     L.push('');
     L.push('INTERPRETACIÓN');
     L.push('- ' + i.etiqueta + ': ' + i.texto);
-    i.acciones.forEach(function (a) { L.push('- ' + a.replace(/(\d{4,})/g, function (m) { return miles(m); })); });
+    i.acciones.forEach(function (a) { L.push('- ' + conMoneda(a)); });
     L.push('');
-    L.push('CÓMO AVANZAR');
+    L.push('OPCIONES PARA AVANZAR');
     L.push('- Opción A · reserva del ' + r.porcentajeReserva + '%: ' + money(r.reserva));
     if (o.incluirUsd) {
       L.push('- Opción B · inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP) + ' (saldo hasta completar la reserva: ' + money(r.saldoDespuesCierreUsd) + ')');
@@ -81,20 +93,28 @@
   /** Versión corta, pensada para WhatsApp. */
   function textoCorto(datos, r, opciones) {
     var o = opciones || {};
+    var v = Ruta.veredicto(r);
     var L = [];
-    L.push('Resumen de tu asesoría' + (datos.estudiante ? ', ' + datos.estudiante.split(' ')[0] : ''));
+    L.push('Tu ruta' + (datos.estudiante ? ', ' + datos.estudiante.split(' ')[0] : '') + ' — ' + (datos.destinoFinal || 'tu destino'));
     L.push('');
-    L.push('Destino: ' + (datos.destinoFinal || '—'));
-    L.push('Viaje estimado: ' + fecha(datos.fechaViaje) + ' (' + r.meses + ' meses)');
-    L.push('Fondos de referencia: ' + money(r.fondosReferencia));
-    L.push('Recursos actuales: ' + money(r.recursosActuales));
-    L.push('Diferencia por preparar: ' + money(r.diferencia));
-    L.push('Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia));
+    L.push('PARA INICIAR HOY: ' + money(v.meta) + ' (reserva del ' + r.porcentajeReserva + ' %)');
+    L.push('Tienes disponible: ' + money(v.tiene) + (v.falta > 0 ? ' · faltan ' + money(v.falta) : ' · alcanza'));
+    L.push(Ruta.TITULOS[v.nivel] + '.');
+    if (v.falta > 0 && v.plazo) L.push('Ahorrando ' + money(r.capacidadMensual) + '/mes lo completas en unas ' + v.plazo.cantidad + ' ' + v.plazo.unidad + '.');
     L.push('');
-    L.push('Para avanzar:');
-    L.push('A) Reserva del ' + r.porcentajeReserva + '%: ' + money(r.reserva));
-    if (o.incluirUsd) L.push('B) Inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP));
-    if (datos.proximaGestion) L.push('C) Próxima revisión: ' + fecha(datos.proximaGestion));
+    L.push('Después de reservar:');
+    L.push('2) Saldo del programa: ' + money(Math.max(0, r.valorPrograma - r.reserva)));
+    L.push('3) Acreditar fondos: ' + money(r.fondosReferencia) + (r.diferencia > 0 ? ' — te faltan ' + money(r.diferencia) + ', son ' + money(r.ahorroMensualReferencia) + '/mes por ' + r.meses + ' meses' : ' — ya los cubres'));
+    L.push('4) Documentos, procesos y visado');
+    L.push('5) Viaje: ' + fecha(datos.fechaViaje));
+    if (o.incluirUsd) {
+      L.push('');
+      L.push('Alternativa de inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP));
+    }
+    if (datos.proximaGestion) {
+      L.push('');
+      L.push('Próxima revisión: ' + fecha(datos.proximaGestion));
+    }
     L.push('');
     L.push(Config.aviso);
     return L.join('\n');

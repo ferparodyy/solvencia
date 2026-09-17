@@ -6,6 +6,7 @@
   var Config = window.SolvenciaConfig;
   var Store = window.SolvenciaStore;
   var Res = window.SolvenciaResumen;
+  var Ruta = window.SolvenciaRuta;
 
   var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
   var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
@@ -179,13 +180,22 @@
       : 'Se calcula con la fecha de viaje. Puedes sobrescribirlo.';
 
     // avisos de conversión
-    $('#hint-programa').textContent = d.monedaPrograma === 'COP' ? ''
-      : (tasaDe(d, d.monedaPrograma) ? 'Equivale a ' + Res.money(r.valorPrograma) : '⚠ Digita la tasa de ' + d.monedaPrograma + ' para convertir.');
-    var hintFondos = 'Según la información validada por el departamento de procesos.';
-    $('#hint-fondos').textContent = d.monedaFondos === 'COP' ? hintFondos
-      : (tasaDe(d, d.monedaFondos) ? hintFondos + ' Equivale a ' + Res.money(r.fondosReferencia) : '⚠ Digita la tasa de ' + d.monedaFondos + ' para convertir.');
+    $('#hint-programa').textContent = avisoMoneda(d, d.monedaPrograma, d.valorPrograma, r.valorPrograma, '');
+    $('#hint-fondos').textContent = avisoMoneda(d, d.monedaFondos, d.fondosReferencia, r.fondosReferencia,
+      'Según la información validada por el departamento de procesos.');
+
+    var opDestino = $('#destino').selectedOptions[0];
+    var monedaSugerida = opDestino && opDestino.dataset.moneda;
+    $('#sugerencia-moneda').textContent = monedaSugerida && monedaSugerida !== 'COP'
+      ? 'En ' + d.destino + ' los valores suelen cotizarse en ' + monedaSugerida + '. Cambia la moneda solo si digitaste la cifra en ' + monedaSugerida + '.'
+      : '';
+
+    renderVeredicto(d, r);
+    renderAlcance(r);
+    renderRuta(d, r);
 
     // cifras principales
+    $('#res-programa').textContent = Res.money(r.valorPrograma);
     $('#res-fondos').textContent = Res.money(r.fondosReferencia);
     $('#res-recursos').textContent = Res.money(r.recursosActuales);
     $('#res-diferencia').textContent = Res.money(r.diferencia);
@@ -247,6 +257,74 @@
     Store.guardarBorrador(d);
     Store.guardarPrefs({ asesor: d.asesor, tasaUsd: d.tasaUsd, tasaEur: d.tasaEur, fechaTasa: d.fechaTasa });
     return { d: d, r: r };
+  }
+
+  function renderVeredicto(d, r) {
+    var v = Ruta.veredicto(r);
+    var box = $('#veredicto');
+    box.dataset.nivel = v.nivel;
+
+    $('#ver-monto').textContent = v.meta > 0 ? Res.money(v.meta) : '—';
+    $('#ver-sub').textContent = v.meta > 0
+      ? 'Reserva del ' + r.porcentajeReserva + ' % sobre ' + Res.money(r.valorPrograma)
+      : 'Digita el valor del programa para calcular la reserva';
+    $('#ver-fill').style.width = Math.round(v.cubierto * 100) + '%';
+    $('#ver-titulo').textContent = Ruta.TITULOS[v.nivel];
+
+    $('#ver-cuenta').textContent = v.meta > 0
+      ? 'Tienes disponible ' + Res.money(v.tiene) + (v.falta > 0 ? ' · te faltan ' + Res.money(v.falta) : ' · cubierto')
+      : '';
+
+    var accion = '';
+    if (v.nivel === 'puede') {
+      accion = 'Con lo que tienes disponible se puede firmar y dejar el cupo reservado en esta misma asesoría.';
+    } else if (v.falta > 0 && v.plazo) {
+      accion = 'Ahorrando ' + Res.money(r.capacidadMensual) + ' al mes, completas los ' + Res.money(v.falta)
+        + ' que faltan en unas ' + v.plazo.cantidad + ' ' + v.plazo.unidad + ' (cerca del ' + Res.fecha(v.fechaPosible) + ').';
+    } else if (v.falta > 0) {
+      accion = 'Para saber cuándo podrías reservar, falta registrar cuánto puedes ahorrar cada mes.';
+    }
+    $('#ver-accion').textContent = accion;
+  }
+
+  function renderAlcance(r) {
+    var ul = $('#alcance');
+    if (r.pagoInicial <= 0) { ul.innerHTML = ''; return; }
+    var items = Ruta.alcanceHoy(r).filter(function (x) {
+      return x.id !== 'cierre_usd' || estado.usdDesbloqueado;
+    });
+    ul.innerHTML = '<li class="alcance__titulo">Con los ' + Res.money(r.pagoInicial) + ' que puedes destinar hoy:</li>'
+      + items.map(function (x) {
+        return '<li class="alcance__item" data-ok="' + x.alcanza + '"><span class="alcance__marca">' + (x.alcanza ? '✔' : '✕') + '</span>'
+          + '<span>' + x.etiqueta + '</span><strong>' + (x.monto > 0 ? Res.money(x.monto) : '—') + '</strong></li>';
+      }).join('');
+  }
+
+  function renderRuta(d, r) {
+    var pasos = Ruta.pasos(d, r);
+    $('#ruta').innerHTML = pasos.map(function (p) {
+      var detalle = p.detalle.replace(/(\d{4,})/g, function (m) { return Res.money(parseInt(m, 10)); });
+      var cuando = p.fecha ? Res.fecha(p.fecha) : p.cuando;
+      return '<li class="paso" data-estado="' + p.estado + '">'
+        + '<span class="paso__n">' + p.n + '</span>'
+        + '<div class="paso__cuerpo">'
+        + '<div class="paso__fila"><h4>' + p.titulo + '</h4>'
+        + (p.monto > 0 ? '<strong class="paso__monto">' + Res.money(p.monto) + '</strong>' : '')
+        + '</div>'
+        + '<p class="paso__cuando">' + cuando + '</p>'
+        + '<p class="paso__detalle">' + detalle + '</p>'
+        + '</div></li>';
+    }).join('');
+  }
+
+  /* Una cifra grande digitada en moneda extranjera casi siempre es un error de moneda. */
+  function avisoMoneda(d, moneda, digitado, convertido, base) {
+    if (moneda === 'COP') return base;
+    if (!tasaDe(d, moneda)) return '⚠ Digita la tasa de ' + moneda + ' para convertir.';
+    if (digitado >= 1000000) {
+      return '⚠ ¿Son de verdad ' + Res.miles(digitado) + ' ' + moneda + '? Con la tasa digitada equivale a ' + Res.money(convertido) + '. Revisa la moneda.';
+    }
+    return (base ? base + ' ' : '') + 'Equivale a ' + Res.money(convertido) + '.';
   }
 
   function tasaDe(d, moneda) {
@@ -483,12 +561,8 @@
     });
     document.addEventListener('change', function (e) {
       if (e.target.id === 'destino') {
-        var op = e.target.selectedOptions[0];
-        if (op && op.dataset.moneda) {
-          $('#monedaPrograma').value = op.dataset.moneda;
-          $('#monedaFondos').value = op.dataset.moneda;
-        }
-        $('#destinoOtro').hidden = false;
+        $('#campo-destino-otro').hidden = e.target.value !== 'Otro destino';
+        if (e.target.value === 'Otro destino') $('#destinoOtro').focus();
       }
       if (e.target.dataset && e.target.dataset.pago != null) {
         Store.marcarPago(e.target.dataset.pago, e.target.checked);
@@ -609,6 +683,7 @@
       $('#fechaTasa').value = prefs.fechaTasa || hoyISO();
     }
     $('#tasaUsdEspejo').value = $('#tasaUsd').value;
+    $('#campo-destino-otro').hidden = $('#destino').value !== 'Otro destino';
     if (!Store.disponible()) aviso('Este navegador no permite guardar datos locales: usa Descargar para no perder el resumen.');
 
     render();
