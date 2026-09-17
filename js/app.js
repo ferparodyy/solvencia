@@ -7,6 +7,7 @@
   var Store = window.SolvenciaStore;
   var Res = window.SolvenciaResumen;
   var Ruta = window.SolvenciaRuta;
+  var Plan = window.SolvenciaPlan;
 
   var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
   var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
@@ -190,6 +191,11 @@
       ? 'En ' + d.destino + ' los valores suelen cotizarse en ' + monedaSugerida + '. Cambia la moneda solo si digitaste la cifra en ' + monedaSugerida + '.'
       : '';
 
+    renderMeta(r);
+    renderComposicion(r);
+    renderPlanMensual(d, r);
+    renderPalancas(d, r);
+    renderSoportes();
     renderVeredicto(d, r);
     renderAlcance(r);
     renderRuta(d, r);
@@ -259,6 +265,73 @@
     return { d: d, r: r };
   }
 
+  /* Sustituye montos crudos por moneda formateada dentro de un texto. */
+  function conMoneda(txt) {
+    return String(txt).replace(/(\d{4,})/g, function (m) { return Res.money(parseInt(m, 10)); });
+  }
+
+  function renderMeta(r) {
+    var e = Plan.encuadre(r);
+    var box = $('#meta');
+    box.dataset.tono = e.tono;
+    $('#meta-monto').textContent = r.fondosReferencia > 0 ? Res.money(r.fondosReferencia) : '—';
+    $('#meta-nopaga').textContent = r.fondosReferencia > 0 ? Config.noSePaga : '';
+    $('#meta-titulo').textContent = e.titulo;
+    $('#meta-texto').textContent = e.texto;
+  }
+
+  function renderComposicion(r) {
+    var c = Plan.composicion(r);
+    var vacio = c.partes.length === 0;
+    $('#bloque-composicion').hidden = vacio;
+    if (vacio) return;
+
+    $('#apilada').innerHTML = c.partes.map(function (p) {
+      return '<span class="apilada__parte" data-id="' + p.id + '" style="width:' + (p.pct * 100) + '%"></span>';
+    }).join('');
+
+    $('#composicion').innerHTML = c.partes.map(function (p) {
+      return '<li class="fuente" data-id="' + p.id + '"><span class="fuente__punto"></span>'
+        + '<span class="fuente__etq">' + p.etiqueta + '</span>'
+        + '<strong>' + Res.money(p.monto) + '</strong>'
+        + '<span class="fuente__pct">' + Math.round(p.pct * 100) + ' %</span></li>';
+    }).join('');
+  }
+
+  function renderPlanMensual(d, r) {
+    var vacio = r.diferencia <= 0 || r.meses <= 0;
+    $('#bloque-plan').hidden = vacio;
+    if (vacio) return;
+
+    var eq = Plan.equivalencias(r.ahorroMensualReferencia);
+    $('#equivalencias').innerHTML = '<div class="eq eq--fuerte"><span>al mes</span><strong>' + Res.money(eq.mensual) + '</strong></div>'
+      + '<div class="eq"><span>a la semana</span><strong>' + Res.money(eq.semanal) + '</strong></div>'
+      + '<div class="eq"><span>al día</span><strong>' + Res.money(eq.diario) + '</strong></div>';
+
+    $('#cronograma').innerHTML = Plan.cronograma(r).map(function (f) {
+      return '<li class="hito' + (f.esMeta ? ' hito--meta' : '') + '">'
+        + '<span class="hito__fecha">' + Res.fecha(f.fecha) + '</span>'
+        + '<span class="hito__objetivo">' + Res.money(f.objetivo) + '</span>'
+        + '<span class="hito__falta">' + (f.faltante > 0 ? 'faltarían ' + Res.money(f.faltante) : 'meta cumplida') + '</span>'
+        + '</li>';
+    }).join('');
+  }
+
+  function renderPalancas(d, r) {
+    var lista = Plan.palancas(d, r);
+    $('#bloque-palancas').hidden = lista.length === 0;
+    $('#palancas').innerHTML = lista.map(function (p) {
+      return '<article class="palanca"><h4>' + p.titulo + '</h4><p>' + Res.textoPalanca(p) + '</p></article>';
+    }).join('');
+  }
+
+  function renderSoportes() {
+    if ($('#soportes').children.length) return;
+    $('#soportes').innerHTML = Config.fuentesSolvencia.map(function (f) {
+      return '<li><strong>' + f.fuente + '</strong><span>' + f.soporte + '</span></li>';
+    }).join('');
+  }
+
   function renderVeredicto(d, r) {
     var v = Ruta.veredicto(r);
     var box = $('#veredicto');
@@ -303,7 +376,7 @@
   function renderRuta(d, r) {
     var pasos = Ruta.pasos(d, r);
     $('#ruta').innerHTML = pasos.map(function (p) {
-      var detalle = p.detalle.replace(/(\d{4,})/g, function (m) { return Res.money(parseInt(m, 10)); });
+      var detalle = conMoneda(p.detalle);
       var cuando = p.fecha ? Res.fecha(p.fecha) : p.cuando;
       return '<li class="paso" data-estado="' + p.estado + '">'
         + '<span class="paso__n">' + p.n + '</span>'
@@ -601,6 +674,8 @@
     $('#btn-guardar').addEventListener('click', guardar);
     $('#btn-nuevo').addEventListener('click', nuevo);
     $('#btn-imprimir').addEventListener('click', function () { window.print(); });
+    // al imprimir, el detalle cerrado no saldría en el PDF
+    window.addEventListener('beforeprint', function () { $('.detalle-numeros').open = true; });
     $('#btn-copiar').addEventListener('click', function () { copiar(resumenTexto(false), 'Resumen copiado'); });
 
     $('#btn-descargar').addEventListener('click', function () {

@@ -17,24 +17,36 @@ Todo editable: los requisitos cambian según destino, programa y perfil.
 mensual, apoyo familiar y aporte del patrocinador, otros recursos y pago inicial disponible.
 No se piden ni se guardan números de cuenta, extractos ni información bancaria.
 
-**3. Resultado en tiempo real** — el panel derecho responde primero la pregunta que importa:
-**¿se puede iniciar hoy?**
+**3. El plan, en tiempo real** — el panel derecho se recalcula con cada tecla y está armado
+para que el estudiante no se asuste con el monto, sino que vea cómo se construye:
 
-- **Veredicto**: cuánto vale la reserva, cuánto tiene disponible el estudiante, cuánto falta, y
-  en cuántas semanas o meses lo completaría al ritmo de ahorro que declaró. Cuatro estados:
-  sí puede hoy / está muy cerca (cubre 60 % o más) / hoy no alcanza / falta el valor del programa.
-- **Qué alcanza hoy**: con el pago inicial declarado, qué se puede pagar y qué no.
-- **Tu ruta, paso a paso**: reservar → completar el valor del programa → acreditar los fondos →
-  documentos → procesos y visado → viajar. Cada paso con su monto, su momento y su estado.
-- **Los números detrás**, para sustentar la ruta:
+- **La meta, sin drama**: la cifra a demostrar, con la aclaración de que *este dinero no se paga
+  ni se envía: se demuestra que existe*. Debajo, un encuadre que cambia con el avance
+  ("ya llevas más de la mitad del camino", "tienes con qué empezar", "empecemos por el plan,
+  no por el monto"). Nunca alarmista.
+- **De dónde sale ese respaldo**: barra apilada con lo que ya tiene ahorrado, el apoyo del
+  patrocinador, otros recursos y lo que falta construir, cada uno con su peso en el total.
+- **Tu plan, mes a mes**: el ahorro dicho al mes, a la semana y al día — porque $65.708 diarios
+  se procesan distinto a $30.000.000 — y un cronograma de hitos con cuánto debería tener
+  acumulado en cada fecha hasta llegar a la meta.
+- **Si el ahorro mensual te aprieta**: palancas calculadas con sus propios números, no consejos
+  genéricos. Cuánto tiempo más necesita al ritmo que ya puede, cuánto apoyo exacto haría viable
+  el plan, cuánto le falta por semana, y la opción de ajustar el programa.
+- **Con qué se respalda cada fuente**: qué documento demuestra el ahorro, el patrocinio, las
+  cesantías, el salario. Aclarando que procesos confirma los soportes exactos del destino.
+- **Tu ruta, paso a paso**: reservar → completar el programa → acreditar los fondos → documentos
+  → procesos y visado → viajar, con monto, momento y estado en cada paso.
+- **Para reservar tu cupo**: el 25 % y si el pago inicial alcanza. Va al final, no al principio.
+- **Los números detrás**: plegado, para el asesor. Diferencia, proyección, cobertura, interpretación.
 
 | Cifra | Cómo sale |
 |---|---|
 | Recursos actuales | ahorros + aporte del patrocinador (si hay apoyo) + otros recursos |
-| Diferencia por preparar | fondos de referencia − recursos actuales (nunca negativa) |
+| Diferencia por construir | fondos de referencia − recursos actuales (nunca negativa) |
 | Ahorro mensual de referencia | diferencia ÷ meses hasta el viaje |
-| Proyección a la fecha de viaje | recursos actuales + (capacidad mensual × meses) |
-| Interpretación | estado según si la proyección alcanza la cifra de referencia |
+| Equivalencias | mensual ÷ 4,345 semanas · mensual ÷ 30,44 días |
+| Palanca de tiempo | meses que tomaría cubrir la diferencia a la capacidad declarada |
+| Palanca de apoyo | diferencia − (capacidad declarada × meses disponibles) |
 | Reserva | valor del programa × porcentaje de reserva (25 % por defecto) |
 
 **4. ¿Cómo podemos avanzar?** — tres rutas, con la sugerencia calculada a partir del pago inicial:
@@ -88,7 +100,8 @@ index.html          Interfaz completa
 assets/styles.css   Estilos (claro/oscuro, móvil, impresión)
 js/config.js        Catálogos editables: destinos, tipos de programa, documentos, guion
 js/calc.js          Motor de cálculo (funciones puras, sin DOM)
-js/ruta.js          Veredicto de "¿se puede hoy?" y los pasos de la ruta
+js/ruta.js          Veredicto de la reserva y los pasos de la ruta
+js/plan.js          Composición, equivalencias, cronograma y palancas
 js/storage.js       localStorage: borrador, registros, indicadores
 js/resumen.js       Formatos de moneda/fecha y armado del resumen y del CSV
 js/app.js           Wiring de la interfaz
@@ -99,7 +112,7 @@ tests/              Pruebas del motor de cálculo y de la ruta
 ## Desarrollo
 
 ```bash
-npm test                  # 26 pruebas (node --test, sin dependencias)
+npm test                  # 40 pruebas (node --test, sin dependencias)
 node tools/build-demo.js  # regenera dist/demo.html
 python3 -m http.server 8080   # opcional: servir la carpeta
 ```

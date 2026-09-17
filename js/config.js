@@ -39,6 +39,19 @@
       { id: 'sin_decision', etiqueta: 'Sin decisión en esta asesoría' }
     ],
 
+    // Con qué se suele respaldar cada origen del dinero. El soporte exacto de cada
+    // destino lo confirma el departamento de procesos: aquí solo se orienta.
+    fuentesSolvencia: [
+      { fuente: 'Tu ahorro', soporte: 'Extractos de la cuenta de los últimos meses' },
+      { fuente: 'Apoyo de un patrocinador', soporte: 'Carta de patrocinio, más los soportes de ingreso y extractos de quien apoya' },
+      { fuente: 'Cesantías o prima', soporte: 'Certificado del fondo o del empleador' },
+      { fuente: 'Tu salario', soporte: 'Certificación laboral y desprendibles de pago' },
+      { fuente: 'Ingresos independientes', soporte: 'RUT, declaración de renta y extractos' },
+      { fuente: 'Venta de un bien', soporte: 'Documento de la venta y el ingreso reflejado en la cuenta' }
+    ],
+
+    noSePaga: 'Este dinero no se paga ni se envía a nadie: se demuestra que existe. Es el respaldo de que puedes sostener tu estadía.',
+
     documentosSugeridos: [
       'Documento de identidad vigente',
       'Pasaporte (o cita para tramitarlo)',
@@ -56,6 +69,18 @@
       {
         momento: 'Al mostrar el resultado',
         texto: 'Con la información que acabamos de ingresar, podemos revisar qué alternativas tienes para comenzar y qué aspectos debes preparar antes de pasar a la etapa de procesos y visado.'
+      },
+      {
+        momento: 'Al mostrar la cifra de solvencia',
+        texto: 'Antes de que veas el número, quiero que tengas clara una cosa: esta plata no se paga ni se envía a nadie. Es un respaldo que se demuestra, para que la embajada vea que puedes sostener tu estadía.'
+      },
+      {
+        momento: 'Si el estudiante se asusta con el monto',
+        texto: 'Es normal que de una sola vez se vea enorme. Por eso no lo miramos así: lo partimos en meses, sumamos lo que ya tienes y el apoyo con el que cuentas, y ahí verás que es un plan, no un muro.'
+      },
+      {
+        momento: 'Al mostrar las alternativas',
+        texto: 'No hay una sola manera de llegar. Podemos darte más tiempo, sumar un apoyo, subir un poco el ahorro o ajustar el programa. Miremos cuál se parece más a tu realidad.'
       },
       {
         momento: 'Antes de las opciones',
