@@ -418,6 +418,10 @@
   }
 
   function descargar(nombre, contenido, tipo) {
+    if (window.SOLVENCIA_DEMO) {
+      copiar(contenido, 'Vista de prueba: copiado al portapapeles (en la app se descarga el archivo)');
+      return;
+    }
     var blob = new Blob([contenido], { type: (tipo || 'text/plain') + ';charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -590,6 +594,7 @@
   /* ---------- arranque ---------- */
 
   function iniciar() {
+    if (!document.body.dataset.modo) document.body.dataset.modo = 'asesor';
     poblarCatalogos();
     conectar();
 

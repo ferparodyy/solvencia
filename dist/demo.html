@@ -1,0 +1,1843 @@
+<title>Diagnóstico de Solvencia</title>
+<style>
+/* Diagnóstico de solvencia — estilos */
+:root {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --line: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --brand: #1d4ed8;
+  --brand-soft: #eff4ff;
+  --ok: #047857;
+  --ok-soft: #ecfdf5;
+  --alerta: #b45309;
+  --alerta-soft: #fffbeb;
+  --riesgo: #b91c1c;
+  --riesgo-soft: #fef2f2;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1120;
+    --surface: #111a2e;
+    --surface-2: #0f172a;
+    --line: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --brand: #60a5fa;
+    --brand-soft: #14213d;
+    --ok: #34d399;
+    --ok-soft: #052e23;
+    --alerta: #fbbf24;
+    --alerta-soft: #2e2205;
+    --riesgo: #f87171;
+    --riesgo-soft: #2d0d0d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { line-height: 1.25; margin: 0 0 .4em; letter-spacing: -.01em; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: .95rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 1.4em; }
+p { margin: 0 0 .8em; }
+.hint { color: var(--muted); font-size: .82rem; }
+
+/* ---------- topbar ---------- */
+.topbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.topbar__brand { display: flex; align-items: center; gap: 10px; }
+.topbar__brand small { display: block; color: var(--muted); font-size: .78rem; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+.topbar__acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* ---------- controles ---------- */
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer;
+  border-radius: 10px; border: 1px solid var(--line);
+  padding: 9px 14px; background: var(--surface); color: var(--text);
+  transition: transform .06s ease, background .15s ease, border-color .15s ease;
+}
+.btn:hover { border-color: var(--brand); }
+.btn:active { transform: translateY(1px); }
+.btn--primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn--primary:hover { filter: brightness(1.06); }
+.btn--ghost { background: var(--surface-2); }
+.btn--full { width: 100%; margin-top: 10px; }
+.btn--mini { padding: 6px 10px; font-size: .78rem; }
+.btn--link { background: none; border: none; color: var(--brand); padding: 4px 6px; text-decoration: underline; }
+.btn--peligro { color: var(--riesgo); }
+.btn--file { display: inline-flex; align-items: center; }
+
+.switch { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.switch__btn {
+  font: inherit; font-weight: 600; font-size: .85rem; cursor: pointer;
+  border: 0; background: none; color: var(--muted); padding: 7px 12px; border-radius: 8px;
+}
+.switch__btn.is-on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.switch--sm .switch__btn { padding: 6px 16px; }
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, .95fr);
+  gap: 20px;
+  align-items: start;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px 16px 60px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.tab {
+  font: inherit; font-weight: 600; font-size: .86rem; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+  padding: 8px 13px; border-radius: 999px;
+}
+.tab.is-on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.tabpane { display: none; }
+.tabpane.is-on { display: block; }
+
+/* ---------- campos ---------- */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field > span { font-size: .8rem; font-weight: 600; color: var(--muted); }
+.field--inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+.field--inline input { max-width: 110px; }
+
+input, select, textarea {
+  font: inherit; color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%;
+  min-width: 0;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--brand); outline-offset: -1px; background: var(--surface); }
+input[type="date"] { min-height: 42px; }
+textarea { resize: vertical; }
+.inline { display: flex; gap: 8px; align-items: center; }
+.inline .moneda { max-width: 92px; }
+.money { font-variant-numeric: tabular-nums; }
+
+.tasas { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px; margin: 6px 0 0; }
+.tasas legend { font-size: .8rem; font-weight: 700; color: var(--muted); padding: 0 6px; }
+
+/* ---------- preguntas ---------- */
+.qa { display: grid; gap: 16px; margin-bottom: 16px; }
+.qa__row { border-left: 3px solid var(--line); padding-left: 14px; }
+.qa__row--destacada { border-left-color: var(--brand); }
+.qa__q { font-weight: 600; margin-bottom: 8px; }
+
+.checkbox { display: flex; gap: 8px; align-items: center; padding: 6px 0; font-size: .88rem; }
+.checkbox input { width: 18px; height: 18px; flex: 0 0 auto; }
+
+/* ---------- resultado ---------- */
+.panel-resultado { position: sticky; top: 76px; }
+.resultado {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.estado {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 600; font-size: .88rem;
+  padding: 9px 12px; border-radius: 10px; margin-bottom: 14px;
+  background: var(--surface-2); color: var(--muted);
+}
+.estado__punto { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: 0 0 auto; }
+.estado[data-tono="ok"] { background: var(--ok-soft); color: var(--ok); }
+.estado[data-tono="alerta"] { background: var(--alerta-soft); color: var(--alerta); }
+.estado[data-tono="riesgo"] { background: var(--riesgo-soft); color: var(--riesgo); }
+
+.cifras { margin: 0 0 12px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.cifras > div { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--surface); padding: 11px 14px; }
+.cifras dt { color: var(--muted); font-size: .84rem; }
+.cifras dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.cifras__destacada { background: var(--brand-soft) !important; }
+.cifras__destacada dd { color: var(--brand); font-size: 1.05rem; }
+
+.barra { height: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.barra__fill { height: 100%; width: 0; background: var(--brand); transition: width .25s ease; }
+
+.interpretacion { background: var(--surface-2); border-radius: 12px; padding: 14px; margin-top: 14px; }
+.interpretacion h3 { margin-top: 0; }
+.interpretacion ul { margin: 0; padding-left: 18px; font-size: .86rem; color: var(--muted); }
+.interpretacion li { margin-bottom: 4px; }
+
+.opt-mini { display: grid; gap: 8px; }
+.opt-mini__item { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.opt-mini__item span { font-size: .84rem; color: var(--muted); }
+.opt-mini__item strong { font-variant-numeric: tabular-nums; }
+
+.aviso { font-size: .75rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 10px; margin-top: 16px; }
+.acciones-resumen { display: flex; flex-wrap: wrap; gap: 8px; }
+.acciones-resumen .btn { flex: 1 1 auto; font-size: .82rem; padding: 8px 10px; }
+
+/* ---------- opciones comerciales ---------- */
+.sugerencia { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--line); margin-bottom: 16px; font-size: .9rem; }
+.sugerencia[data-ruta="reserva"] { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+.sugerencia[data-ruta="cierre_usd"] { background: var(--alerta-soft); border-color: transparent; color: var(--alerta); }
+.sugerencia[data-ruta="seguimiento"] { background: var(--brand-soft); border-color: transparent; color: var(--brand); }
+
+.opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.opcion { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; background: var(--surface-2); display: flex; flex-direction: column; }
+.opcion h3 { text-transform: none; letter-spacing: 0; color: var(--text); font-size: 1.05rem; margin: 4px 0 8px; }
+.opcion__tag { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.opcion--a { border-color: var(--brand); }
+.opcion--a .opcion__tag { color: var(--brand); }
+.opcion--b .opcion__tag { color: var(--alerta); }
+.opcion.is-elegida { outline: 2px solid var(--brand); }
+.opcion__valor { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 0 0 10px; }
+.opcion__saldo { font-size: .8rem; color: var(--muted); }
+.check { margin: 10px 0; padding-left: 18px; font-size: .84rem; color: var(--muted); }
+.check li { margin-bottom: 5px; }
+.lock { background: var(--alerta-soft); border-radius: 10px; padding: 12px; font-size: .84rem; }
+.lock p { color: var(--alerta); }
+.docs { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 10px 0; }
+.docs legend { font-size: .78rem; font-weight: 700; color: var(--muted); }
+.decision-actual { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: var(--brand-soft); color: var(--brand); font-size: .9rem; }
+
+/* ---------- guion ---------- */
+.guion { display: grid; gap: 12px; }
+.guion__card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; background: var(--surface-2); }
+.guion__momento { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--brand); }
+.guion__card p { margin: 8px 0 10px; font-size: .92rem; }
+
+/* ---------- indicadores ---------- */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+.kpi { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.kpi dt { font-size: .76rem; color: var(--muted); margin-bottom: 4px; }
+.kpi dd { margin: 0; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.acciones-indicadores { display: flex; flex-wrap: wrap; gap: 8px; }
+.tabla-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+.tabla { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.tabla th, .tabla td { padding: 9px 11px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tabla th { background: var(--surface-2); color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .05em; }
+.tabla tr:last-child td { border-bottom: 0; }
+.tabla .vacio { color: var(--muted); text-align: center; padding: 22px; }
+.acciones-fila { display: flex; gap: 2px; }
+.gestiones { display: grid; gap: 8px; }
+.gestion { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .86rem; }
+
+/* ---------- toast ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px);
+  background: var(--text); color: var(--bg); padding: 11px 18px; border-radius: 999px;
+  font-size: .86rem; font-weight: 600; opacity: 0; pointer-events: none; transition: all .2s ease; z-index: 50;
+  max-width: calc(100vw - 32px); text-align: center;
+}
+.toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- modo estudiante ---------- */
+body[data-modo="estudiante"] .panel-trabajo,
+body[data-modo="estudiante"] #btn-guardar,
+body[data-modo="estudiante"] #btn-nuevo { display: none; }
+body[data-modo="estudiante"] .layout { grid-template-columns: minmax(0, 860px); justify-content: center; }
+body[data-modo="estudiante"] .panel-resultado { position: static; }
+body[data-modo="estudiante"] .resultado { padding: 32px; }
+body[data-modo="estudiante"] .cifras dd { font-size: 1.15rem; }
+body[data-modo="estudiante"] .cifras__destacada dd { font-size: 1.6rem; }
+body[data-modo="estudiante"] .resultado__cabecera h2 { font-size: 1.6rem; }
+body[data-modo="estudiante"] .acciones-resumen { justify-content: center; }
+body[data-modo="estudiante"] .cifras { grid-template-columns: 1fr 1fr; }
+body[data-modo="estudiante"] .cifras__destacada { grid-column: 1 / -1; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1020px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .panel-resultado { position: static; }
+}
+@media (max-width: 560px) {
+  .layout { padding: 14px 12px 50px; }
+  .card, .resultado { padding: 16px; }
+  .topbar { padding: 10px 12px; }
+  .topbar__acciones { width: 100%; }
+  .topbar__acciones .btn { flex: 1; }
+  body[data-modo="estudiante"] .cifras { grid-template-columns: 1fr; }
+}
+
+.solo-impresion { display: none; }
+
+/* ---------- impresión ---------- */
+@media print {
+  .topbar, .panel-trabajo, .acciones-resumen, .toast { display: none !important; }
+  body { background: #fff; }
+  .layout { display: block; padding: 0; max-width: none; }
+  .resultado { border: 0; box-shadow: none; padding: 0; }
+  .cifras > div { break-inside: avoid; }
+  .solo-impresion { display: block; font-size: .85rem; color: #475569; margin-bottom: 14px; }
+  .resultado__cabecera h2 { font-size: 1.4rem; }
+}
+
+</style>
+<header class="topbar">
+  <div class="topbar__brand">
+    <span class="dot"></span>
+    <div>
+      <strong>Diagnóstico de solvencia</strong>
+      <small id="cabecera-caso">Nuevo diagnóstico</small>
+    </div>
+  </div>
+  <div class="topbar__acciones">
+    <div class="switch" role="group" aria-label="Modo de la herramienta">
+      <button type="button" class="switch__btn is-on" data-modo-btn="asesor">Modo asesor</button>
+      <button type="button" class="switch__btn" data-modo-btn="estudiante">Modo estudiante</button>
+    </div>
+    <button type="button" class="btn btn--ghost" id="btn-nuevo">Nuevo</button>
+    <button type="button" class="btn btn--primary" id="btn-guardar">Guardar diagnóstico</button>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ COLUMNA DE TRABAJO (MODO ASESOR) ============ -->
+  <section class="panel-trabajo" id="panel-trabajo">
+    <nav class="tabs" role="tablist">
+      <button class="tab is-on" role="tab" data-tab="proyecto">1. Proyecto</button>
+      <button class="tab" role="tab" data-tab="finanzas">2. Situación financiera</button>
+      <button class="tab" role="tab" data-tab="avanzar">3. Cómo avanzar</button>
+      <button class="tab" role="tab" data-tab="guion">Guion</button>
+      <button class="tab" role="tab" data-tab="indicadores">Indicadores</button>
+    </nav>
+
+    <!-- ---------- PROYECTO ---------- -->
+    <div class="tabpane is-on" data-pane="proyecto">
+      <div class="card">
+        <h2>Datos del proyecto</h2>
+        <p class="hint">Todos los valores son editables: los requisitos cambian según destino, programa y perfil del estudiante.</p>
+
+        <div class="grid">
+          <label class="field">
+            <span>Estudiante</span>
+            <input type="text" id="estudiante" placeholder="Nombre y apellido" autocomplete="off">
+          </label>
+          <label class="field">
+            <span>Asesor</span>
+            <input type="text" id="asesor" placeholder="Tu nombre" autocomplete="off">
+          </label>
+          <label class="field">
+            <span>WhatsApp del estudiante</span>
+            <input type="tel" id="telefono" placeholder="3001234567" autocomplete="off">
+          </label>
+          <label class="field">
+            <span>Correo del estudiante</span>
+            <input type="email" id="correo" placeholder="nombre@correo.com" autocomplete="off">
+          </label>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span>Destino</span>
+            <select id="destino"></select>
+          </label>
+          <label class="field">
+            <span>Destino (si es otro)</span>
+            <input type="text" id="destinoOtro" placeholder="Escríbelo aquí" autocomplete="off">
+          </label>
+          <label class="field">
+            <span>Tipo de programa</span>
+            <select id="tipoPrograma"></select>
+          </label>
+          <label class="field">
+            <span>Programa</span>
+            <input type="text" id="programa" placeholder="Ej. inglés general, 25 h/semana" autocomplete="off">
+          </label>
+          <label class="field">
+            <span>Duración</span>
+            <div class="inline">
+              <input type="number" id="duracion" min="0" step="1" placeholder="0">
+              <select id="duracionUnidad">
+                <option value="semanas">semanas</option>
+                <option value="meses">meses</option>
+                <option value="años">años</option>
+              </select>
+            </div>
+          </label>
+          <label class="field">
+            <span>Fecha estimada de viaje</span>
+            <input type="date" id="fechaViaje">
+          </label>
+          <label class="field">
+            <span>Meses hasta el viaje</span>
+            <div class="inline">
+              <input type="number" id="mesesOverride" min="0" step="1" placeholder="auto">
+              <button type="button" class="btn btn--mini" id="btn-meses-auto">Auto</button>
+            </div>
+            <small class="hint" id="meses-auto-hint">Se calcula con la fecha de viaje. Puedes sobrescribirlo.</small>
+          </label>
+        </div>
+
+        <div class="grid">
+          <label class="field">
+            <span>Valor estimado del programa</span>
+            <div class="inline">
+              <input type="text" inputmode="numeric" id="valorPrograma" class="money" placeholder="0">
+              <select id="monedaPrograma" class="moneda">
+                <option value="COP">COP</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+            <small class="hint" id="hint-programa"></small>
+          </label>
+          <label class="field">
+            <span>Fondos de referencia a acreditar</span>
+            <div class="inline">
+              <input type="text" inputmode="numeric" id="fondosReferencia" class="money" placeholder="0">
+              <select id="monedaFondos" class="moneda">
+                <option value="COP">COP</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+            <small class="hint" id="hint-fondos">Según la información validada por el departamento de procesos.</small>
+          </label>
+          <label class="field">
+            <span>Fuente / nota del requisito</span>
+            <input type="text" id="fuenteFondos" placeholder="Ej. actualizado por procesos el dd/mm/aaaa" autocomplete="off">
+          </label>
+        </div>
+
+        <fieldset class="tasas">
+          <legend>Tasas de conversión (editables)</legend>
+          <div class="grid grid--3">
+            <label class="field">
+              <span>1 USD en COP</span>
+              <input type="text" inputmode="numeric" id="tasaUsd" class="money" placeholder="Digita la tasa del día">
+            </label>
+            <label class="field">
+              <span>1 EUR en COP</span>
+              <input type="text" inputmode="numeric" id="tasaEur" class="money" placeholder="Digita la tasa del día">
+            </label>
+            <label class="field">
+              <span>Fecha de la tasa</span>
+              <input type="date" id="fechaTasa">
+            </label>
+          </div>
+          <p class="hint">La herramienta no consulta tasas automáticamente: se digitan para que quede claro con qué cifra se hizo la asesoría.</p>
+        </fieldset>
+      </div>
+    </div>
+
+    <!-- ---------- FINANZAS ---------- -->
+    <div class="tabpane" data-pane="finanzas">
+      <div class="card">
+        <h2>Situación financiera actual</h2>
+        <p class="hint">Preguntas para hacerle al estudiante. No se registran números de cuenta, extractos ni información bancaria.</p>
+
+        <div class="qa">
+          <div class="qa__row">
+            <div class="qa__q">¿Cuánto tienes ahorrado actualmente?</div>
+            <label class="field">
+              <span>Ahorros disponibles</span>
+              <input type="text" inputmode="numeric" id="ahorros" class="money" placeholder="0">
+            </label>
+          </div>
+
+          <div class="qa__row">
+            <div class="qa__q">¿Cuánto puedes ahorrar cada mes?</div>
+            <label class="field">
+              <span>Capacidad de ahorro mensual</span>
+              <input type="text" inputmode="numeric" id="capacidadMensual" class="money" placeholder="0">
+            </label>
+          </div>
+
+          <div class="qa__row">
+            <div class="qa__q">¿Tienes apoyo familiar?</div>
+            <div class="field">
+              <span>Apoyo familiar</span>
+              <div class="switch switch--sm" role="group">
+                <button type="button" class="switch__btn" data-apoyo="si">Sí</button>
+                <button type="button" class="switch__btn is-on" data-apoyo="no">No</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="qa__row" id="fila-patrocinador" hidden>
+            <div class="qa__q">¿Cuánto podría aportar tu patrocinador?</div>
+            <div class="grid">
+              <label class="field">
+                <span>Aporte estimado</span>
+                <input type="text" inputmode="numeric" id="aportePatrocinador" class="money" placeholder="0">
+              </label>
+              <label class="field">
+                <span>Parentesco / relación</span>
+                <input type="text" id="patrocinadorRelacion" placeholder="Ej. madre, tío, pareja" autocomplete="off">
+              </label>
+            </div>
+          </div>
+
+          <div class="qa__row">
+            <div class="qa__q">¿Tienes otros recursos destinados al viaje?</div>
+            <label class="field">
+              <span>Valor adicional</span>
+              <input type="text" inputmode="numeric" id="otrosRecursos" class="money" placeholder="0">
+            </label>
+            <label class="field">
+              <span>¿Cuáles? (opcional)</span>
+              <input type="text" id="otrosDetalle" placeholder="Ej. cesantías, venta de vehículo" autocomplete="off">
+            </label>
+          </div>
+
+          <div class="qa__row qa__row--destacada">
+            <div class="qa__q">¿Cuánto podrías destinar inicialmente al proceso?</div>
+            <label class="field">
+              <span>Pago inicial disponible</span>
+              <input type="text" inputmode="numeric" id="pagoInicial" class="money" placeholder="0">
+              <small class="hint">Este dato define qué alternativa de inicio tiene sentido mostrar.</small>
+            </label>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Notas internas de la asesoría (no se muestran al estudiante)</span>
+          <textarea id="notas" rows="3" placeholder="Contexto, compromisos, observaciones"></textarea>
+        </label>
+      </div>
+    </div>
+
+    <!-- ---------- AVANZAR ---------- -->
+    <div class="tabpane" data-pane="avanzar">
+      <div class="card">
+        <h2>¿Cómo podemos avanzar?</h2>
+        <p class="hint">Abre esta sección con el estudiante cuando ya vio su situación. La sugerencia de abajo se calcula con el pago inicial declarado.</p>
+        <div class="sugerencia" id="sugerencia-ruta"></div>
+
+        <div class="opciones">
+          <!-- OPCIÓN A -->
+          <article class="opcion opcion--a" data-opcion="reserva">
+            <header>
+              <span class="opcion__tag">Opción A · recomendada</span>
+              <h3>Reserva del <span id="etq-porcentaje">25</span>%</h3>
+            </header>
+            <p class="opcion__valor" id="valor-reserva">—</p>
+            <label class="field field--inline">
+              <span>Porcentaje de reserva</span>
+              <input type="number" id="porcentajeReserva" min="0" max="100" step="1" value="25">
+            </label>
+            <ul class="check">
+              <li>Inicio del proceso según las condiciones comerciales vigentes.</li>
+              <li>Posibilidad de congelar el valor del curso.</li>
+              <li>Revisar con el estudiante condiciones de pago, cambios y cancelaciones.</li>
+            </ul>
+            <p class="opcion__saldo" id="saldo-reserva"></p>
+            <button type="button" class="btn btn--primary btn--full" data-elegir="reserva">Registrar esta decisión</button>
+          </article>
+
+          <!-- OPCIÓN B -->
+          <article class="opcion opcion--b is-locked" data-opcion="cierre_usd">
+            <header>
+              <span class="opcion__tag">Opción B · último recurso</span>
+              <h3>Inicio con USD <span id="etq-usd">200</span></h3>
+            </header>
+            <div class="lock" id="bloqueo-usd">
+              <p><strong>Solo como cierre final.</strong> Muéstrala únicamente cuando quede claro que el estudiante no puede cubrir la reserva.</p>
+              <button type="button" class="btn btn--ghost btn--full" id="btn-desbloquear-usd">El estudiante no puede cubrir la reserva · habilitar</button>
+            </div>
+            <div class="opcion__cuerpo" hidden>
+              <p class="opcion__valor" id="valor-usd">—</p>
+              <div class="grid grid--2">
+                <label class="field field--inline">
+                  <span>Monto en USD</span>
+                  <input type="number" id="montoCierreUsd" min="0" step="10" value="200">
+                </label>
+                <label class="field field--inline">
+                  <span>Tasa usada</span>
+                  <input type="text" id="tasaUsdEspejo" class="money" placeholder="0">
+                </label>
+              </div>
+              <ul class="check">
+                <li>Qué cubre: apertura del proceso y bloqueo del cupo según condiciones comerciales.</li>
+                <li>Qué NO cubre: el saldo de la reserva y los pagos posteriores del programa.</li>
+                <li id="saldo-usd">Saldo pendiente hasta completar la reserva: —</li>
+              </ul>
+              <label class="field">
+                <span>Fecha comprometida para completar la reserva</span>
+                <input type="date" id="fechaCompletarReserva">
+              </label>
+              <button type="button" class="btn btn--primary btn--full" data-elegir="cierre_usd">Registrar esta decisión</button>
+              <button type="button" class="btn btn--link" id="btn-bloquear-usd">Ocultar de nuevo</button>
+            </div>
+          </article>
+
+          <!-- OPCIÓN C -->
+          <article class="opcion opcion--c" data-opcion="seguimiento">
+            <header>
+              <span class="opcion__tag">Opción C</span>
+              <h3>Plan de preparación</h3>
+            </header>
+            <p class="opcion__valor" id="valor-meta">—</p>
+            <div class="grid grid--2">
+              <label class="field">
+                <span>Fecha de próxima revisión</span>
+                <input type="date" id="proximaGestion">
+              </label>
+              <label class="field">
+                <span>Meta de ahorro a esa fecha</span>
+                <input type="text" inputmode="numeric" id="metaAhorro" class="money" placeholder="0">
+              </label>
+            </div>
+            <fieldset class="docs">
+              <legend>Documentos que debe comenzar a organizar</legend>
+              <div id="lista-docs"></div>
+            </fieldset>
+            <label class="field">
+              <span>Próximo contacto del asesor</span>
+              <input type="text" id="proximoContacto" placeholder="Ej. llamada el viernes 10:00 a. m." autocomplete="off">
+            </label>
+            <button type="button" class="btn btn--primary btn--full" data-elegir="seguimiento">Registrar esta decisión</button>
+          </article>
+        </div>
+
+        <div class="decision-actual" id="decision-actual" hidden></div>
+      </div>
+    </div>
+
+    <!-- ---------- GUION ---------- -->
+    <div class="tabpane" data-pane="guion">
+      <div class="card">
+        <h2>Guion para la asesoría</h2>
+        <p class="hint">Frases de apoyo. Toca una tarjeta para copiarla.</p>
+        <div id="lista-guion" class="guion"></div>
+      </div>
+    </div>
+
+    <!-- ---------- INDICADORES ---------- -->
+    <div class="tabpane" data-pane="indicadores">
+      <div class="card">
+        <h2>Indicador comercial</h2>
+        <p class="hint">Se calcula con los diagnósticos guardados en este equipo. Exporta el CSV para consolidar con gerencia.</p>
+        <div class="kpis" id="kpis"></div>
+        <div class="acciones-indicadores">
+          <button type="button" class="btn btn--ghost" id="btn-exportar-csv">Exportar CSV</button>
+          <button type="button" class="btn btn--ghost" id="btn-exportar-json">Respaldo JSON</button>
+          <label class="btn btn--ghost btn--file">Importar respaldo<input type="file" id="input-importar" accept="application/json" hidden></label>
+        </div>
+        <h3>Diagnósticos registrados</h3>
+        <div class="tabla-wrap"><table class="tabla" id="tabla-registros"></table></div>
+        <h3>Próximas gestiones</h3>
+        <div id="lista-gestiones" class="gestiones"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESULTADO EN TIEMPO REAL ============ -->
+  <aside class="panel-resultado" id="panel-resultado">
+    <div class="resultado" id="resultado">
+
+      <div class="resultado__cabecera">
+        <h2 id="res-titulo">Resumen del proyecto</h2>
+        <p id="res-subtitulo" class="hint">Completa los datos y el resultado se actualiza solo.</p>
+        <p class="solo-impresion" id="res-ficha"></p>
+      </div>
+
+      <div class="estado" id="res-estado"><span class="estado__punto"></span><span id="res-estado-texto">Falta el dato de referencia</span></div>
+
+      <dl class="cifras">
+        <div><dt>Fondos de referencia</dt><dd id="res-fondos">$0</dd></div>
+        <div><dt>Recursos actuales</dt><dd id="res-recursos">$0</dd></div>
+        <div class="cifras__destacada"><dt>Diferencia por preparar</dt><dd id="res-diferencia">$0</dd></div>
+      </dl>
+
+      <div class="barra" aria-hidden="true"><div class="barra__fill" id="res-barra"></div></div>
+      <p class="hint" id="res-cobertura">0 % de la cifra de referencia</p>
+
+      <h3>Plan de preparación</h3>
+      <dl class="cifras cifras--plan">
+        <div><dt>Meses hasta el viaje</dt><dd id="res-meses">0</dd></div>
+        <div><dt>Ahorro mensual de referencia</dt><dd id="res-ahorro">$0</dd></div>
+        <div><dt>Capacidad declarada</dt><dd id="res-capacidad">$0</dd></div>
+        <div><dt>Proyección a la fecha de viaje</dt><dd id="res-proyeccion">$0</dd></div>
+      </dl>
+
+      <div class="interpretacion">
+        <h3>Interpretación</h3>
+        <p id="res-interpretacion">—</p>
+        <ul id="res-acciones"></ul>
+      </div>
+
+      <div class="opciones-resumen" id="res-opciones"></div>
+
+      <p class="aviso" id="res-aviso"></p>
+
+      <div class="acciones-resumen">
+        <button type="button" class="btn btn--ghost" id="btn-whatsapp">WhatsApp</button>
+        <button type="button" class="btn btn--ghost" id="btn-correo">Correo</button>
+        <button type="button" class="btn btn--ghost" id="btn-descargar">Descargar</button>
+        <button type="button" class="btn btn--ghost" id="btn-imprimir">Imprimir / PDF</button>
+        <button type="button" class="btn btn--ghost" id="btn-copiar">Copiar resumen</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>window.SOLVENCIA_DEMO = true;</script>
+<script>
+/*
+ * Catálogos editables. Las cifras de fondos de referencia NO vienen precargadas:
+ * las define el departamento de procesos y las digita el asesor en cada diagnóstico.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SolvenciaConfig = api;
+})(typeof self !== 'undefined' ? self : globalThis, function () {
+  'use strict';
+
+  return {
+    // moneda: la que suele usar el destino, solo como valor por defecto del selector.
+    destinos: [
+      { nombre: 'Irlanda', moneda: 'EUR' },
+      { nombre: 'Australia', moneda: 'USD' },
+      { nombre: 'Canadá', moneda: 'USD' },
+      { nombre: 'Malta', moneda: 'EUR' },
+      { nombre: 'España', moneda: 'EUR' },
+      { nombre: 'Reino Unido', moneda: 'EUR' },
+      { nombre: 'Nueva Zelanda', moneda: 'USD' },
+      { nombre: 'Estados Unidos', moneda: 'USD' },
+      { nombre: 'Otro destino', moneda: 'COP' }
+    ],
+
+    tiposPrograma: [
+      'Curso de idioma',
+      'Idioma + trabajo',
+      'Programa vocacional / certificado',
+      'Pregrado',
+      'Posgrado / maestría',
+      'Otro'
+    ],
+
+    decisiones: [
+      { id: 'reserva', etiqueta: 'Reserva del porcentaje acordado' },
+      { id: 'cierre_usd', etiqueta: 'Inicio con monto en USD (último recurso)' },
+      { id: 'seguimiento', etiqueta: 'Plan de preparación con seguimiento' },
+      { id: 'sin_decision', etiqueta: 'Sin decisión en esta asesoría' }
+    ],
+
+    documentosSugeridos: [
+      'Documento de identidad vigente',
+      'Pasaporte (o cita para tramitarlo)',
+      'Certificados de estudio / diplomas',
+      'Certificación laboral o de ingresos',
+      'Soportes del apoyo económico (carta del patrocinador)',
+      'Historial de ahorro del último periodo'
+    ],
+
+    guion: [
+      {
+        momento: 'Apertura de la parte financiera',
+        texto: 'Ahora vamos a revisar la parte financiera de tu proyecto. La idea no es decirte simplemente cuánto dinero necesitas, sino entender en qué punto estás hoy y qué tendríamos que organizar para que puedas viajar en la fecha que deseas.'
+      },
+      {
+        momento: 'Al mostrar el resultado',
+        texto: 'Con la información que acabamos de ingresar, podemos revisar qué alternativas tienes para comenzar y qué aspectos debes preparar antes de pasar a la etapa de procesos y visado.'
+      },
+      {
+        momento: 'Antes de las opciones',
+        texto: 'Esta cifra no es una aprobación ni un rechazo: es el punto de partida para organizar tu plan. Miremos juntos cómo podemos avanzar desde donde estás hoy.'
+      },
+      {
+        momento: 'Si el estudiante duda del monto',
+        texto: 'Los fondos de referencia los define el departamento de procesos según el destino, el programa y tu perfil. Si algo cambia en tu caso, los ajustamos y volvemos a revisar el plan.'
+      },
+      {
+        momento: 'Cierre con seguimiento',
+        texto: 'Dejemos una fecha concreta para volver a revisar tus números y una meta de ahorro clara. Así, cuando nos hablemos de nuevo, avanzamos en lugar de empezar otra vez.'
+      }
+    ],
+
+    aviso: 'Cifras únicamente ilustrativas. No representan una evaluación migratoria real ni una aprobación de visa.'
+  };
+});
+
+/*
+ * Motor de cálculo del Diagnóstico de Solvencia.
+ * Funciones puras, sin DOM: se usan en el navegador y en las pruebas de Node.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SolvenciaCalc = api;
+})(typeof self !== 'undefined' ? self : globalThis, function () {
+  'use strict';
+
+  var DIAS_MES = 30.4375;
+
+  function num(v) {
+    var n = typeof v === 'number' ? v : parseFloat(String(v == null ? '' : v).replace(/[^\d.-]/g, ''));
+    return isFinite(n) ? n : 0;
+  }
+
+  function clampPos(n) {
+    return n > 0 ? n : 0;
+  }
+
+  /** Meses completos entre dos fechas ISO (yyyy-mm-dd). Nunca negativo. */
+  function mesesEntre(desdeISO, hastaISO) {
+    if (!desdeISO || !hastaISO) return 0;
+    var a = new Date(desdeISO + 'T00:00:00');
+    var b = new Date(hastaISO + 'T00:00:00');
+    if (isNaN(a) || isNaN(b)) return 0;
+    var dias = (b - a) / 86400000;
+    return clampPos(Math.round(dias / DIAS_MES));
+  }
+
+  /** Suma meses a una fecha ISO y devuelve ISO. */
+  function sumarMeses(desdeISO, meses) {
+    if (!desdeISO) return '';
+    var d = new Date(desdeISO + 'T00:00:00');
+    if (isNaN(d)) return '';
+    d.setMonth(d.getMonth() + Math.ceil(num(meses)));
+    return d.toISOString().slice(0, 10);
+  }
+
+  /** Convierte un monto a COP usando tasas editables. */
+  function aCOP(monto, moneda, tasas) {
+    var m = num(monto);
+    var t = tasas || {};
+    if (moneda === 'USD') return m * num(t.usd);
+    if (moneda === 'EUR') return m * num(t.eur);
+    return m;
+  }
+
+  /**
+   * Diagnóstico completo. Entrada plana (ver README) -> resultado plano.
+   * Todo en COP. Ningún valor se inventa: lo que no se digita vale 0.
+   */
+  function diagnosticar(input) {
+    var i = input || {};
+    var tasas = { usd: num(i.tasaUsd), eur: num(i.tasaEur) };
+
+    var fondosReferencia = clampPos(aCOP(i.fondosReferencia, i.monedaFondos, tasas));
+    var valorPrograma = clampPos(aCOP(i.valorPrograma, i.monedaPrograma, tasas));
+
+    var ahorros = clampPos(num(i.ahorros));
+    var patrocinador = i.apoyoFamiliar ? clampPos(num(i.aportePatrocinador)) : 0;
+    var otros = clampPos(num(i.otrosRecursos));
+    var recursosActuales = ahorros + patrocinador + otros;
+
+    var capacidadMensual = clampPos(num(i.capacidadMensual));
+    var pagoInicial = clampPos(num(i.pagoInicial));
+
+    var mesesCalculados = mesesEntre(i.hoy, i.fechaViaje);
+    var meses = i.mesesOverride === '' || i.mesesOverride == null
+      ? mesesCalculados
+      : clampPos(Math.round(num(i.mesesOverride)));
+
+    var diferencia = clampPos(fondosReferencia - recursosActuales);
+    var ahorroMensualReferencia = meses > 0 ? diferencia / meses : diferencia;
+
+    var aporteProyectado = capacidadMensual * meses;
+    var proyeccionAlViaje = recursosActuales + aporteProyectado;
+    var brechaProyectada = clampPos(fondosReferencia - proyeccionAlViaje);
+    var cobertura = fondosReferencia > 0 ? recursosActuales / fondosReferencia : 0;
+    var coberturaProyectada = fondosReferencia > 0 ? proyeccionAlViaje / fondosReferencia : 0;
+
+    // Meses que tomaría cerrar la diferencia al ritmo de ahorro declarado.
+    var mesesNecesarios = null;
+    if (diferencia > 0 && capacidadMensual > 0) mesesNecesarios = Math.ceil(diferencia / capacidadMensual);
+    var fechaSugerida = mesesNecesarios != null ? sumarMeses(i.hoy, mesesNecesarios) : '';
+
+    var estado;
+    if (fondosReferencia <= 0) estado = 'sin_referencia';
+    else if (diferencia <= 0) estado = 'cubierto';
+    else if (brechaProyectada <= 0) estado = 'en_ruta';
+    else if (coberturaProyectada >= 0.7) estado = 'ajuste_menor';
+    else estado = 'requiere_ajuste';
+
+    var porcentajeReserva = i.porcentajeReserva === '' || i.porcentajeReserva == null ? 25 : num(i.porcentajeReserva);
+    var reserva = valorPrograma * (porcentajeReserva / 100);
+
+    var montoCierreUsd = i.montoCierreUsd === '' || i.montoCierreUsd == null ? 200 : num(i.montoCierreUsd);
+    var cierreUsdCOP = montoCierreUsd * num(tasas.usd);
+    var saldoDespuesCierreUsd = clampPos(reserva - cierreUsdCOP);
+
+    return {
+      tasas: tasas,
+      fondosReferencia: fondosReferencia,
+      valorPrograma: valorPrograma,
+      recursos: { ahorros: ahorros, patrocinador: patrocinador, otros: otros, total: recursosActuales },
+      recursosActuales: recursosActuales,
+      diferencia: diferencia,
+      meses: meses,
+      mesesCalculados: mesesCalculados,
+      capacidadMensual: capacidadMensual,
+      ahorroMensualReferencia: ahorroMensualReferencia,
+      aporteProyectado: aporteProyectado,
+      proyeccionAlViaje: proyeccionAlViaje,
+      brechaProyectada: brechaProyectada,
+      cobertura: cobertura,
+      coberturaProyectada: coberturaProyectada,
+      mesesNecesarios: mesesNecesarios,
+      fechaSugerida: fechaSugerida,
+      estado: estado,
+      porcentajeReserva: porcentajeReserva,
+      reserva: reserva,
+      montoCierreUsd: montoCierreUsd,
+      cierreUsdCOP: cierreUsdCOP,
+      saldoDespuesCierreUsd: saldoDespuesCierreUsd,
+      pagoInicial: pagoInicial,
+      puedeReserva: valorPrograma > 0 && pagoInicial >= reserva,
+      faltaParaReserva: clampPos(reserva - pagoInicial),
+      puedeCierreUsd: cierreUsdCOP > 0 && pagoInicial >= cierreUsdCOP
+    };
+  }
+
+  var ESTADOS = {
+    sin_referencia: {
+      etiqueta: 'Falta el dato de referencia',
+      tono: 'neutro',
+      texto: 'Aún no se han registrado los fondos de referencia validados por procesos. Sin ese dato no hay diagnóstico.'
+    },
+    cubierto: {
+      etiqueta: 'Recursos actuales por encima de la referencia',
+      tono: 'ok',
+      texto: 'Con lo declarado hoy, los recursos alcanzan la cifra de referencia. El siguiente paso es organizar documentos y pasar a la etapa de procesos y visado.'
+    },
+    en_ruta: {
+      etiqueta: 'En ruta con el ahorro declarado',
+      tono: 'ok',
+      texto: 'Manteniendo el ahorro mensual declarado, el proyecto llega a la cifra de referencia antes de la fecha de viaje. Conviene sostener el ritmo y dejar el plan por escrito.'
+    },
+    ajuste_menor: {
+      etiqueta: 'Cerca, con ajustes',
+      tono: 'alerta',
+      texto: 'Falta una parte de la diferencia para la fecha planteada. Se puede revisar subir el ahorro mensual, sumar apoyo económico legítimo o mover la fecha unas semanas.'
+    },
+    requiere_ajuste: {
+      etiqueta: 'Requiere replantear el plan',
+      tono: 'riesgo',
+      texto: 'Con el ritmo actual la diferencia no se cubre para esa fecha. Hay que revisar fecha de viaje, duración o presupuesto del programa, y el apoyo económico disponible.'
+    }
+  };
+
+  function interpretar(r) {
+    var base = ESTADOS[r.estado] || ESTADOS.sin_referencia;
+    var acciones = [];
+    if (r.estado !== 'sin_referencia' && r.diferencia > 0) {
+      if (r.meses > 0) {
+        acciones.push('Ahorro mensual de referencia: ' + Math.round(r.ahorroMensualReferencia) + ' durante ' + r.meses + ' meses.');
+      } else {
+        acciones.push('No hay meses de preparación: la diferencia tendría que estar disponible ya.');
+      }
+      if (r.capacidadMensual > 0 && r.ahorroMensualReferencia > r.capacidadMensual) {
+        acciones.push('El ahorro de referencia supera la capacidad declarada. Revisar apoyo económico, fecha o presupuesto.');
+      }
+      if (r.mesesNecesarios != null) {
+        acciones.push('Al ritmo declarado, la diferencia se cubriría en ' + r.mesesNecesarios + ' meses.');
+      }
+      if (r.capacidadMensual <= 0) {
+        acciones.push('No se registró capacidad de ahorro mensual: es el primer dato a definir.');
+      }
+    }
+    return { etiqueta: base.etiqueta, tono: base.tono, texto: base.texto, acciones: acciones };
+  }
+
+  /** Sugerencia de ruta comercial. La opción USD es último recurso, nunca la primera. */
+  function rutaComercial(r) {
+    if (r.puedeReserva) return 'reserva';
+    if (r.puedeCierreUsd) return 'cierre_usd';
+    return 'seguimiento';
+  }
+
+  return {
+    num: num,
+    mesesEntre: mesesEntre,
+    sumarMeses: sumarMeses,
+    aCOP: aCOP,
+    diagnosticar: diagnosticar,
+    interpretar: interpretar,
+    rutaComercial: rutaComercial,
+    ESTADOS: ESTADOS
+  };
+});
+
+/*
+ * Persistencia local (localStorage). No se guardan números de cuenta,
+ * extractos ni información bancaria: la herramienta no los pide.
+ */
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SolvenciaStore = api;
+})(typeof self !== 'undefined' ? self : globalThis, function () {
+  'use strict';
+
+  var KEY_REGISTROS = 'solvencia.registros.v1';
+  var KEY_BORRADOR = 'solvencia.borrador.v1';
+  var KEY_PREFS = 'solvencia.prefs.v1';
+
+  function disponible() {
+    try {
+      localStorage.setItem('__t', '1');
+      localStorage.removeItem('__t');
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function leer(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function escribir(key, valor) {
+    try {
+      localStorage.setItem(key, JSON.stringify(valor));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function id() {
+    return 'dx-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function registros() {
+    var r = leer(KEY_REGISTROS, []);
+    return Array.isArray(r) ? r : [];
+  }
+
+  function guardarRegistro(reg) {
+    var lista = registros();
+    var i = lista.findIndex(function (x) { return x.id === reg.id; });
+    if (i >= 0) lista[i] = reg; else lista.unshift(reg);
+    escribir(KEY_REGISTROS, lista);
+    return reg;
+  }
+
+  function borrarRegistro(idReg) {
+    escribir(KEY_REGISTROS, registros().filter(function (x) { return x.id !== idReg; }));
+  }
+
+  function marcarPago(idReg, pago) {
+    var lista = registros();
+    var reg = lista.find(function (x) { return x.id === idReg; });
+    if (!reg) return null;
+    reg.pagoGenerado = !!pago;
+    reg.fechaPago = pago ? new Date().toISOString().slice(0, 10) : '';
+    escribir(KEY_REGISTROS, lista);
+    return reg;
+  }
+
+  /** Indicadores comerciales agregados. */
+  function indicadores(lista) {
+    var regs = lista || registros();
+    var cuenta = function (f) { return regs.filter(f).length; };
+    var total = regs.length;
+    var conCapacidad = cuenta(function (r) { return r.puedeIniciar; });
+    return {
+      total: total,
+      conCapacidad: conCapacidad,
+      reserva: cuenta(function (r) { return r.decision === 'reserva'; }),
+      cierreUsd: cuenta(function (r) { return r.decision === 'cierre_usd'; }),
+      seguimiento: cuenta(function (r) { return r.decision === 'seguimiento'; }),
+      sinDecision: cuenta(function (r) { return !r.decision || r.decision === 'sin_decision'; }),
+      pagos: cuenta(function (r) { return r.pagoGenerado; }),
+      conversion: total ? cuenta(function (r) { return r.decision === 'reserva' || r.decision === 'cierre_usd'; }) / total : 0,
+      pagoSobreDiagnostico: total ? cuenta(function (r) { return r.pagoGenerado; }) / total : 0,
+      proximasGestiones: regs
+        .filter(function (r) { return r.proximaGestion; })
+        .sort(function (a, b) { return a.proximaGestion < b.proximaGestion ? -1 : 1; })
+    };
+  }
+
+  return {
+    disponible: disponible,
+    id: id,
+    registros: registros,
+    guardarRegistro: guardarRegistro,
+    borrarRegistro: borrarRegistro,
+    marcarPago: marcarPago,
+    indicadores: indicadores,
+    leerBorrador: function () { return leer(KEY_BORRADOR, null); },
+    guardarBorrador: function (d) { return escribir(KEY_BORRADOR, d); },
+    limpiarBorrador: function () { try { localStorage.removeItem(KEY_BORRADOR); } catch (e) {} },
+    leerPrefs: function () { return leer(KEY_PREFS, {}); },
+    guardarPrefs: function (p) { return escribir(KEY_PREFS, p); },
+    importar: function (lista) {
+      if (!Array.isArray(lista)) return false;
+      var actuales = registros();
+      var ids = {};
+      actuales.forEach(function (r) { ids[r.id] = true; });
+      lista.forEach(function (r) { if (r && r.id && !ids[r.id]) actuales.push(r); });
+      return escribir(KEY_REGISTROS, actuales);
+    }
+  };
+});
+
+/* Formatos y armado del resumen de la asesoría (texto plano para WhatsApp, correo y descarga). */
+(function (root, factory) {
+  var api = factory(root.SolvenciaCalc, root.SolvenciaConfig);
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SolvenciaResumen = api;
+})(typeof self !== 'undefined' ? self : globalThis, function (Calc, Config) {
+  'use strict';
+
+  var fmtCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  var fmtNum = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+
+  function money(n) { return fmtCOP.format(Math.round(n || 0)); }
+  function miles(n) { return fmtNum.format(Math.round(n || 0)); }
+  function pct(n) { return Math.round((n || 0) * 100) + ' %'; }
+
+  function fecha(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso + 'T00:00:00');
+    if (isNaN(d)) return '—';
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+
+  function etiquetaDecision(id) {
+    var d = (Config.decisiones || []).find(function (x) { return x.id === id; });
+    return d ? d.etiqueta : 'Sin decisión en esta asesoría';
+  }
+
+  /** Resumen en texto plano. `datos` = formulario, `r` = resultado de diagnosticar(). */
+  function texto(datos, r, opciones) {
+    var o = opciones || {};
+    var i = Calc.interpretar(r);
+    var L = [];
+    L.push('DIAGNÓSTICO DE SOLVENCIA — RESUMEN DE ASESORÍA');
+    L.push('');
+    L.push('Estudiante: ' + (datos.estudiante || '—'));
+    L.push('Asesor: ' + (datos.asesor || '—'));
+    L.push('Fecha de la asesoría: ' + fecha(datos.hoy));
+    L.push('');
+    L.push('PROYECTO');
+    L.push('- Destino: ' + (datos.destinoFinal || '—'));
+    L.push('- Programa: ' + [datos.tipoPrograma, datos.programa].filter(Boolean).join(' · ') + (datos.duracion ? ' (' + datos.duracion + ' ' + datos.duracionUnidad + ')' : ''));
+    L.push('- Fecha estimada de viaje: ' + fecha(datos.fechaViaje));
+    L.push('- Meses hasta el viaje: ' + r.meses);
+    L.push('- Valor estimado del programa: ' + money(r.valorPrograma));
+    L.push('- Fondos de referencia: ' + money(r.fondosReferencia) + (datos.fuenteFondos ? ' (' + datos.fuenteFondos + ')' : ''));
+    L.push('');
+    L.push('SITUACIÓN ACTUAL');
+    L.push('- Ahorros disponibles: ' + money(r.recursos.ahorros));
+    L.push('- Apoyo familiar: ' + (datos.apoyoFamiliar ? money(r.recursos.patrocinador) + (datos.patrocinadorRelacion ? ' (' + datos.patrocinadorRelacion + ')' : '') : 'No'));
+    L.push('- Otros recursos: ' + money(r.recursos.otros) + (datos.otrosDetalle ? ' (' + datos.otrosDetalle + ')' : ''));
+    L.push('- Recursos actuales: ' + money(r.recursosActuales) + ' · ' + pct(r.cobertura) + ' de la referencia');
+    L.push('- Diferencia por preparar: ' + money(r.diferencia));
+    L.push('');
+    L.push('PLAN DE PREPARACIÓN');
+    L.push('- Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia) + ' durante ' + r.meses + ' meses');
+    L.push('- Capacidad de ahorro declarada: ' + money(r.capacidadMensual) + ' al mes');
+    L.push('- Proyección a la fecha de viaje: ' + money(r.proyeccionAlViaje));
+    if (r.brechaProyectada > 0) L.push('- Faltante proyectado: ' + money(r.brechaProyectada));
+    if (r.mesesNecesarios != null) L.push('- Al ritmo declarado la diferencia se cubre en ' + r.mesesNecesarios + ' meses (aprox. ' + fecha(r.fechaSugerida) + ')');
+    L.push('');
+    L.push('INTERPRETACIÓN');
+    L.push('- ' + i.etiqueta + ': ' + i.texto);
+    i.acciones.forEach(function (a) { L.push('- ' + a.replace(/(\d{4,})/g, function (m) { return miles(m); })); });
+    L.push('');
+    L.push('CÓMO AVANZAR');
+    L.push('- Opción A · reserva del ' + r.porcentajeReserva + '%: ' + money(r.reserva));
+    if (o.incluirUsd) {
+      L.push('- Opción B · inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP) + ' (saldo hasta completar la reserva: ' + money(r.saldoDespuesCierreUsd) + ')');
+    }
+    L.push('- Opción C · plan de preparación' + (datos.proximaGestion ? ', próxima revisión ' + fecha(datos.proximaGestion) : ''));
+    if (datos.metaAhorro) L.push('  Meta de ahorro a esa fecha: ' + money(Calc.num(datos.metaAhorro)));
+    if (datos.documentos && datos.documentos.length) L.push('  Documentos a organizar: ' + datos.documentos.join(', '));
+    if (datos.proximoContacto) L.push('  Próximo contacto: ' + datos.proximoContacto);
+    L.push('');
+    L.push('Decisión registrada: ' + etiquetaDecision(datos.decision));
+    L.push('');
+    L.push(Config.aviso);
+    return L.join('\n');
+  }
+
+  /** Versión corta, pensada para WhatsApp. */
+  function textoCorto(datos, r, opciones) {
+    var o = opciones || {};
+    var L = [];
+    L.push('Resumen de tu asesoría' + (datos.estudiante ? ', ' + datos.estudiante.split(' ')[0] : ''));
+    L.push('');
+    L.push('Destino: ' + (datos.destinoFinal || '—'));
+    L.push('Viaje estimado: ' + fecha(datos.fechaViaje) + ' (' + r.meses + ' meses)');
+    L.push('Fondos de referencia: ' + money(r.fondosReferencia));
+    L.push('Recursos actuales: ' + money(r.recursosActuales));
+    L.push('Diferencia por preparar: ' + money(r.diferencia));
+    L.push('Ahorro mensual de referencia: ' + money(r.ahorroMensualReferencia));
+    L.push('');
+    L.push('Para avanzar:');
+    L.push('A) Reserva del ' + r.porcentajeReserva + '%: ' + money(r.reserva));
+    if (o.incluirUsd) L.push('B) Inicio con USD ' + r.montoCierreUsd + ': ' + money(r.cierreUsdCOP));
+    if (datos.proximaGestion) L.push('C) Próxima revisión: ' + fecha(datos.proximaGestion));
+    L.push('');
+    L.push(Config.aviso);
+    return L.join('\n');
+  }
+
+  function csv(registros) {
+    var cols = ['id', 'fecha', 'asesor', 'estudiante', 'destino', 'programa', 'fechaViaje', 'meses',
+      'valorPrograma', 'fondosReferencia', 'recursosActuales', 'diferencia', 'ahorroMensualReferencia',
+      'capacidadMensual', 'pagoInicial', 'reserva', 'puedeIniciar', 'decision', 'proximaGestion',
+      'pagoGenerado', 'fechaPago'];
+    var esc = function (v) {
+      var s = v == null ? '' : String(v);
+      return /[",;\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    var filas = registros.map(function (r) { return cols.map(function (c) { return esc(r[c]); }).join(';'); });
+    return [cols.join(';')].concat(filas).join('\n');
+  }
+
+  return { money: money, miles: miles, pct: pct, fecha: fecha, texto: texto, textoCorto: textoCorto, csv: csv, etiquetaDecision: etiquetaDecision };
+});
+
+/* Wiring de la interfaz: lee el formulario, recalcula en cada cambio y pinta el resultado. */
+(function () {
+  'use strict';
+
+  var Calc = window.SolvenciaCalc;
+  var Config = window.SolvenciaConfig;
+  var Store = window.SolvenciaStore;
+  var Res = window.SolvenciaResumen;
+
+  var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
+  var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
+  var hoyISO = function () { return new Date().toISOString().slice(0, 10); };
+
+  var estado = {
+    id: Store.id(),
+    apoyoFamiliar: false,
+    usdDesbloqueado: false,
+    decision: '',
+    guardado: false
+  };
+
+  /* ---------- utilidades de campos ---------- */
+
+  function soloDigitos(s) { return String(s || '').replace(/[^\d]/g, ''); }
+
+  function formatearMoney(el) {
+    var d = soloDigitos(el.value);
+    el.value = d ? Res.miles(parseInt(d, 10)) : '';
+  }
+
+  function valMoney(id) { return parseInt(soloDigitos($('#' + id).value), 10) || 0; }
+  function val(id) { return $('#' + id).value.trim(); }
+
+  function setMoney(id, n) {
+    var el = $('#' + id);
+    if (el) el.value = n ? Res.miles(n) : '';
+  }
+
+  /* ---------- construcción de catálogos ---------- */
+
+  function poblarCatalogos() {
+    var d = $('#destino');
+    Config.destinos.forEach(function (x) {
+      var op = document.createElement('option');
+      op.value = x.nombre;
+      op.textContent = x.nombre;
+      op.dataset.moneda = x.moneda;
+      d.appendChild(op);
+    });
+
+    var t = $('#tipoPrograma');
+    Config.tiposPrograma.forEach(function (x) {
+      var op = document.createElement('option');
+      op.value = x; op.textContent = x;
+      t.appendChild(op);
+    });
+
+    var docs = $('#lista-docs');
+    Config.documentosSugeridos.forEach(function (x, idx) {
+      var lab = document.createElement('label');
+      lab.className = 'checkbox';
+      lab.innerHTML = '<input type="checkbox" data-doc="' + idx + '" value="' + x + '"><span>' + x + '</span>';
+      docs.appendChild(lab);
+    });
+
+    var g = $('#lista-guion');
+    Config.guion.forEach(function (x) {
+      var art = document.createElement('article');
+      art.className = 'guion__card';
+      art.innerHTML = '<span class="guion__momento">' + x.momento + '</span><p>' + x.texto + '</p><button type="button" class="btn btn--mini">Copiar</button>';
+      art.querySelector('button').addEventListener('click', function () { copiar(x.texto, 'Frase copiada'); });
+      g.appendChild(art);
+    });
+
+    $('#res-aviso').textContent = Config.aviso;
+  }
+
+  /* ---------- lectura del formulario ---------- */
+
+  function leerDatos() {
+    var destino = val('destino');
+    var otro = val('destinoOtro');
+    return {
+      id: estado.id,
+      hoy: hoyISO(),
+      estudiante: val('estudiante'),
+      asesor: val('asesor'),
+      telefono: val('telefono'),
+      correo: val('correo'),
+      destino: destino,
+      destinoOtro: otro,
+      destinoFinal: otro || destino,
+      tipoPrograma: val('tipoPrograma'),
+      programa: val('programa'),
+      duracion: val('duracion'),
+      duracionUnidad: val('duracionUnidad'),
+      fechaViaje: val('fechaViaje'),
+      mesesOverride: val('mesesOverride'),
+      valorPrograma: valMoney('valorPrograma'),
+      monedaPrograma: val('monedaPrograma'),
+      fondosReferencia: valMoney('fondosReferencia'),
+      monedaFondos: val('monedaFondos'),
+      fuenteFondos: val('fuenteFondos'),
+      tasaUsd: valMoney('tasaUsd'),
+      tasaEur: valMoney('tasaEur'),
+      fechaTasa: val('fechaTasa'),
+      ahorros: valMoney('ahorros'),
+      capacidadMensual: valMoney('capacidadMensual'),
+      apoyoFamiliar: estado.apoyoFamiliar,
+      aportePatrocinador: valMoney('aportePatrocinador'),
+      patrocinadorRelacion: val('patrocinadorRelacion'),
+      otrosRecursos: valMoney('otrosRecursos'),
+      otrosDetalle: val('otrosDetalle'),
+      pagoInicial: valMoney('pagoInicial'),
+      notas: val('notas'),
+      porcentajeReserva: val('porcentajeReserva'),
+      montoCierreUsd: val('montoCierreUsd'),
+      fechaCompletarReserva: val('fechaCompletarReserva'),
+      proximaGestion: val('proximaGestion'),
+      metaAhorro: valMoney('metaAhorro'),
+      proximoContacto: val('proximoContacto'),
+      documentos: $$('#lista-docs input:checked').map(function (c) { return c.value; }),
+      usdDesbloqueado: estado.usdDesbloqueado,
+      decision: estado.decision
+    };
+  }
+
+  function escribirDatos(d) {
+    if (!d) return;
+    ['estudiante', 'asesor', 'telefono', 'correo', 'destino', 'destinoOtro', 'tipoPrograma', 'programa',
+      'duracion', 'duracionUnidad', 'fechaViaje', 'mesesOverride', 'monedaPrograma', 'monedaFondos',
+      'fuenteFondos', 'fechaTasa', 'patrocinadorRelacion', 'otrosDetalle', 'notas', 'porcentajeReserva',
+      'montoCierreUsd', 'fechaCompletarReserva', 'proximaGestion', 'proximoContacto'
+    ].forEach(function (k) {
+      var el = $('#' + k);
+      if (el && d[k] != null) el.value = d[k];
+    });
+    ['valorPrograma', 'fondosReferencia', 'tasaUsd', 'tasaEur', 'ahorros', 'capacidadMensual',
+      'aportePatrocinador', 'otrosRecursos', 'pagoInicial', 'metaAhorro'
+    ].forEach(function (k) { setMoney(k, d[k]); });
+
+    if (d.id) estado.id = d.id;
+    setApoyo(!!d.apoyoFamiliar);
+    setUsd(!!d.usdDesbloqueado);
+    estado.decision = d.decision || '';
+    (d.documentos || []).forEach(function (txt) {
+      var c = $$('#lista-docs input').find(function (x) { return x.value === txt; });
+      if (c) c.checked = true;
+    });
+  }
+
+  /* ---------- render ---------- */
+
+  function render() {
+    var d = leerDatos();
+    var r = Calc.diagnosticar(d);
+    var i = Calc.interpretar(r);
+
+    // cabecera
+    var esEstudiante = document.body.dataset.modo === 'estudiante';
+    var nombreCorto = (d.estudiante || '').split(' ')[0];
+    $('#res-titulo').textContent = esEstudiante
+      ? (nombreCorto ? 'Tu proyecto, ' + nombreCorto : 'Tu proyecto de estudio')
+      : 'Resumen del proyecto';
+    $('#res-subtitulo').textContent = esEstudiante
+      ? [d.destinoFinal, d.programa, d.fechaViaje ? 'viaje estimado: ' + Res.fecha(d.fechaViaje) : ''].filter(Boolean).join(' · ')
+      : 'Completa los datos y el resultado se actualiza solo.';
+    $('#res-ficha').textContent = [
+      d.estudiante ? 'Estudiante: ' + d.estudiante : '',
+      d.asesor ? 'Asesor: ' + d.asesor : '',
+      'Fecha: ' + Res.fecha(d.hoy)
+    ].filter(Boolean).join('  ·  ');
+
+    $('#cabecera-caso').textContent = [d.estudiante || 'Nuevo diagnóstico', d.destinoFinal].filter(Boolean).join(' · ');
+
+    // meses automáticos
+    $('#meses-auto-hint').textContent = d.fechaViaje
+      ? 'Cálculo automático: ' + r.mesesCalculados + ' meses. Puedes sobrescribirlo.'
+      : 'Se calcula con la fecha de viaje. Puedes sobrescribirlo.';
+
+    // avisos de conversión
+    $('#hint-programa').textContent = d.monedaPrograma === 'COP' ? ''
+      : (tasaDe(d, d.monedaPrograma) ? 'Equivale a ' + Res.money(r.valorPrograma) : '⚠ Digita la tasa de ' + d.monedaPrograma + ' para convertir.');
+    var hintFondos = 'Según la información validada por el departamento de procesos.';
+    $('#hint-fondos').textContent = d.monedaFondos === 'COP' ? hintFondos
+      : (tasaDe(d, d.monedaFondos) ? hintFondos + ' Equivale a ' + Res.money(r.fondosReferencia) : '⚠ Digita la tasa de ' + d.monedaFondos + ' para convertir.');
+
+    // cifras principales
+    $('#res-fondos').textContent = Res.money(r.fondosReferencia);
+    $('#res-recursos').textContent = Res.money(r.recursosActuales);
+    $('#res-diferencia').textContent = Res.money(r.diferencia);
+    $('#res-meses').textContent = r.meses;
+    $('#res-ahorro').textContent = Res.money(r.ahorroMensualReferencia);
+    $('#res-capacidad').textContent = Res.money(r.capacidadMensual) + ' / mes';
+    $('#res-proyeccion').textContent = Res.money(r.proyeccionAlViaje);
+
+    var pct = Math.max(0, Math.min(100, Math.round(r.cobertura * 100)));
+    $('#res-barra').style.width = pct + '%';
+    $('#res-cobertura').textContent = pct + ' % de la cifra de referencia cubierto hoy'
+      + (r.fondosReferencia > 0 ? ' · ' + Math.round(Math.min(1, r.coberturaProyectada) * 100) + ' % proyectado a la fecha de viaje' : '');
+
+    // estado
+    var est = $('#res-estado');
+    est.dataset.tono = i.tono;
+    $('#res-estado-texto').textContent = i.etiqueta;
+    $('#res-interpretacion').textContent = i.texto;
+    var ul = $('#res-acciones');
+    ul.innerHTML = '';
+    i.acciones.forEach(function (a) {
+      var li = document.createElement('li');
+      li.textContent = a.replace(/(\d{4,})/g, function (m) { return Res.miles(parseInt(m, 10)); });
+      ul.appendChild(li);
+    });
+
+    // opciones
+    $('#etq-porcentaje').textContent = r.porcentajeReserva;
+    $('#etq-usd').textContent = r.montoCierreUsd;
+    $('#valor-reserva').textContent = r.valorPrograma > 0 ? Res.money(r.reserva) : 'Falta el valor del programa';
+    $('#saldo-reserva').textContent = r.valorPrograma > 0
+      ? (r.puedeReserva
+        ? '✔ El pago inicial declarado alcanza para la reserva.'
+        : 'Faltan ' + Res.money(r.faltaParaReserva) + ' frente al pago inicial declarado.')
+      : '';
+    $('#valor-usd').textContent = r.tasas.usd > 0 ? Res.money(r.cierreUsdCOP) : '⚠ Digita la tasa USD';
+    $('#saldo-usd').textContent = 'Saldo pendiente hasta completar la reserva: ' + (r.valorPrograma > 0 ? Res.money(r.saldoDespuesCierreUsd) : '—');
+    $('#valor-meta').textContent = r.diferencia > 0
+      ? 'Meta sugerida: ' + Res.money(r.ahorroMensualReferencia) + ' al mes'
+      : 'Sin diferencia pendiente con los datos actuales';
+
+    // sugerencia de ruta
+    var ruta = Calc.rutaComercial(r);
+    var sug = $('#sugerencia-ruta');
+    sug.dataset.ruta = ruta;
+    sug.innerHTML = {
+      reserva: '<strong>Ruta sugerida: reserva del ' + r.porcentajeReserva + '%.</strong> El pago inicial declarado (' + Res.money(r.pagoInicial) + ') cubre ' + Res.money(r.reserva) + '. Trabaja la opción A.',
+      cierre_usd: '<strong>Ruta sugerida: opción A con ajuste.</strong> El pago inicial declarado (' + Res.money(r.pagoInicial) + ') no cubre la reserva de ' + Res.money(r.reserva) + '. Intenta primero completar la reserva; la opción B queda como último recurso.',
+      seguimiento: '<strong>Ruta sugerida: plan de preparación.</strong> Con ' + Res.money(r.pagoInicial) + ' de pago inicial no hay cómo abrir el proceso hoy: agenda seguimiento y meta de ahorro.'
+    }[ruta];
+
+    renderOpcionesResumen(d, r);
+    renderDecision();
+
+    if (!$('#metaAhorro').value && r.ahorroMensualReferencia > 0) {
+      $('#metaAhorro').placeholder = Res.miles(r.ahorroMensualReferencia);
+    }
+
+    Store.guardarBorrador(d);
+    Store.guardarPrefs({ asesor: d.asesor, tasaUsd: d.tasaUsd, tasaEur: d.tasaEur, fechaTasa: d.fechaTasa });
+    return { d: d, r: r };
+  }
+
+  function tasaDe(d, moneda) {
+    return moneda === 'USD' ? d.tasaUsd : moneda === 'EUR' ? d.tasaEur : 1;
+  }
+
+  function renderOpcionesResumen(d, r) {
+    var cont = $('#res-opciones');
+    var html = '<h3>¿Cómo podemos avanzar?</h3><div class="opt-mini">';
+    html += '<div class="opt-mini__item"><span>Opción A · reserva del ' + r.porcentajeReserva + '%</span><strong>' + (r.valorPrograma > 0 ? Res.money(r.reserva) : '—') + '</strong></div>';
+    if (estado.usdDesbloqueado) {
+      html += '<div class="opt-mini__item"><span>Opción B · inicio con USD ' + r.montoCierreUsd + '</span><strong>' + (r.tasas.usd > 0 ? Res.money(r.cierreUsdCOP) : '—') + '</strong></div>';
+    }
+    html += '<div class="opt-mini__item"><span>Opción C · plan de preparación</span><strong>' + (d.proximaGestion ? Res.fecha(d.proximaGestion) : Res.money(r.ahorroMensualReferencia) + '/mes') + '</strong></div>';
+    html += '</div>';
+    cont.innerHTML = html;
+  }
+
+  function renderDecision() {
+    var box = $('#decision-actual');
+    $$('.opcion').forEach(function (o) { o.classList.toggle('is-elegida', o.dataset.opcion === estado.decision); });
+    if (!estado.decision) { box.hidden = true; return; }
+    box.hidden = false;
+    box.innerHTML = 'Decisión registrada: <strong>' + Res.etiquetaDecision(estado.decision) + '</strong> · <button type="button" class="btn btn--link" id="btn-quitar-decision">quitar</button>';
+    $('#btn-quitar-decision').addEventListener('click', function () {
+      estado.decision = '';
+      render();
+      aviso('Decisión eliminada');
+    });
+  }
+
+  /* ---------- modo, apoyo, USD ---------- */
+
+  function setModo(modo) {
+    document.body.dataset.modo = modo;
+    $$('[data-modo-btn]').forEach(function (b) { b.classList.toggle('is-on', b.dataset.modoBtn === modo); });
+    render();
+    if (modo === 'estudiante') aviso('Modo estudiante: pantalla lista para mostrar');
+  }
+
+  function setApoyo(si) {
+    estado.apoyoFamiliar = si;
+    $$('[data-apoyo]').forEach(function (b) { b.classList.toggle('is-on', (b.dataset.apoyo === 'si') === si); });
+    $('#fila-patrocinador').hidden = !si;
+  }
+
+  function setUsd(abierto) {
+    estado.usdDesbloqueado = abierto;
+    var card = $('.opcion--b');
+    card.classList.toggle('is-locked', !abierto);
+    $('#bloqueo-usd').hidden = abierto;
+    $('.opcion--b .opcion__cuerpo').hidden = !abierto;
+    if (!abierto && estado.decision === 'cierre_usd') estado.decision = '';
+  }
+
+  /* ---------- guardar / indicadores ---------- */
+
+  function registroDesde(d, r) {
+    return {
+      id: d.id,
+      fecha: d.hoy,
+      asesor: d.asesor,
+      estudiante: d.estudiante,
+      telefono: d.telefono,
+      correo: d.correo,
+      destino: d.destinoFinal,
+      programa: [d.tipoPrograma, d.programa].filter(Boolean).join(' · '),
+      fechaViaje: d.fechaViaje,
+      meses: r.meses,
+      valorPrograma: Math.round(r.valorPrograma),
+      fondosReferencia: Math.round(r.fondosReferencia),
+      recursosActuales: Math.round(r.recursosActuales),
+      diferencia: Math.round(r.diferencia),
+      ahorroMensualReferencia: Math.round(r.ahorroMensualReferencia),
+      capacidadMensual: Math.round(r.capacidadMensual),
+      pagoInicial: Math.round(r.pagoInicial),
+      reserva: Math.round(r.reserva),
+      puedeIniciar: r.puedeReserva || r.puedeCierreUsd,
+      decision: d.decision || 'sin_decision',
+      proximaGestion: d.proximaGestion,
+      proximoContacto: d.proximoContacto,
+      notas: d.notas,
+      pagoGenerado: false,
+      fechaPago: '',
+      datos: d
+    };
+  }
+
+  function guardar() {
+    var x = render();
+    if (!x.d.estudiante) { aviso('Escribe el nombre del estudiante antes de guardar'); irA('proyecto'); $('#estudiante').focus(); return; }
+    var previo = Store.registros().find(function (r) { return r.id === x.d.id; });
+    var reg = registroDesde(x.d, x.r);
+    if (previo) { reg.pagoGenerado = previo.pagoGenerado; reg.fechaPago = previo.fechaPago; }
+    Store.guardarRegistro(reg);
+    estado.guardado = true;
+    renderIndicadores();
+    aviso(previo ? 'Diagnóstico actualizado' : 'Diagnóstico guardado');
+  }
+
+  function nuevo() {
+    if (!confirm('¿Empezar un diagnóstico nuevo? Los datos en pantalla se limpian.')) return;
+    var prefs = Store.leerPrefs();
+    $$('input').forEach(function (el) { if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
+    $('#porcentajeReserva').value = 25;
+    $('#montoCierreUsd').value = 200;
+    $('#notas').value = '';
+    $('#destino').selectedIndex = 0;
+    $('#tipoPrograma').selectedIndex = 0;
+    estado.id = Store.id();
+    estado.decision = '';
+    estado.guardado = false;
+    setApoyo(false);
+    setUsd(false);
+    $('#asesor').value = prefs.asesor || '';
+    setMoney('tasaUsd', prefs.tasaUsd || 0);
+    setMoney('tasaEur', prefs.tasaEur || 0);
+    $('#fechaTasa').value = prefs.fechaTasa || hoyISO();
+    Store.limpiarBorrador();
+    render();
+    irA('proyecto');
+    aviso('Listo para un nuevo diagnóstico');
+  }
+
+  function renderIndicadores() {
+    var regs = Store.registros();
+    var k = Store.indicadores(regs);
+    $('#kpis').innerHTML = [
+      ['Diagnósticos realizados', k.total],
+      ['Con capacidad de iniciar', k.conCapacidad],
+      ['Eligieron reserva', k.reserva],
+      ['Eligieron inicio en USD', k.cierreUsd],
+      ['Solicitaron seguimiento', k.seguimiento],
+      ['Pagos generados', k.pagos],
+      ['Conversión a decisión de pago', Math.round(k.conversion * 100) + ' %'],
+      ['Pagos sobre diagnósticos', Math.round(k.pagoSobreDiagnostico * 100) + ' %']
+    ].map(function (p) {
+      return '<div class="kpi"><dt>' + p[0] + '</dt><dd>' + p[1] + '</dd></div>';
+    }).join('');
+
+    var t = $('#tabla-registros');
+    if (!regs.length) {
+      t.innerHTML = '<tbody><tr><td class="vacio">Aún no hay diagnósticos guardados en este equipo.</td></tr></tbody>';
+    } else {
+      t.innerHTML = '<thead><tr><th>Fecha</th><th>Estudiante</th><th>Destino</th><th>Diferencia</th><th>Decisión</th><th>Próxima gestión</th><th>Pago</th><th></th></tr></thead><tbody>'
+        + regs.map(function (r) {
+          return '<tr><td>' + Res.fecha(r.fecha) + '</td><td>' + (r.estudiante || '—') + '</td><td>' + (r.destino || '—') + '</td>'
+            + '<td>' + Res.money(r.diferencia) + '</td><td>' + Res.etiquetaDecision(r.decision) + '</td>'
+            + '<td>' + (r.proximaGestion ? Res.fecha(r.proximaGestion) : '—') + '</td>'
+            + '<td><input type="checkbox" data-pago="' + r.id + '"' + (r.pagoGenerado ? ' checked' : '') + '></td>'
+            + '<td class="acciones-fila"><button type="button" class="btn btn--link" data-abrir="' + r.id + '">abrir</button>'
+            + '<button type="button" class="btn btn--link btn--peligro" data-borrar="' + r.id + '">borrar</button></td></tr>';
+        }).join('') + '</tbody>';
+    }
+
+    $('#lista-gestiones').innerHTML = k.proximasGestiones.length
+      ? k.proximasGestiones.map(function (r) {
+        return '<div class="gestion"><strong>' + Res.fecha(r.proximaGestion) + '</strong><span>' + (r.estudiante || '—') + ' · ' + (r.destino || '—') + '</span><span class="hint">' + (r.proximoContacto || 'Sin contacto definido') + '</span></div>';
+      }).join('')
+      : '<p class="hint">No hay próximas gestiones agendadas.</p>';
+  }
+
+  /* ---------- compartir ---------- */
+
+  function resumenTexto(corto) {
+    var x = render();
+    var op = { incluirUsd: estado.usdDesbloqueado };
+    return corto ? Res.textoCorto(x.d, x.r, op) : Res.texto(x.d, x.r, op);
+  }
+
+  function descargar(nombre, contenido, tipo) {
+    if (window.SOLVENCIA_DEMO) {
+      copiar(contenido, 'Vista de prueba: copiado al portapapeles (en la app se descarga el archivo)');
+      return;
+    }
+    var blob = new Blob([contenido], { type: (tipo || 'text/plain') + ';charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+  }
+
+  function copiar(txt, msg) {
+    var ok = function () { aviso(msg || 'Copiado'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(ok, function () { copiaManual(txt, ok); });
+    } else copiaManual(txt, ok);
+  }
+
+  function copiaManual(txt, ok) {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); ok(); } catch (e) { aviso('No se pudo copiar'); }
+    ta.remove();
+  }
+
+  function normalizarTel(t) {
+    var d = soloDigitos(t);
+    if (!d) return '';
+    if (d.length === 10) return '57' + d;
+    return d;
+  }
+
+  function aviso(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('is-on');
+    clearTimeout(t._t);
+    t._t = setTimeout(function () { t.classList.remove('is-on'); }, 2600);
+  }
+
+  function irA(pane) {
+    $$('.tab').forEach(function (b) { b.classList.toggle('is-on', b.dataset.tab === pane); });
+    $$('.tabpane').forEach(function (p) { p.classList.toggle('is-on', p.dataset.pane === pane); });
+    if (pane === 'indicadores') renderIndicadores();
+  }
+
+  /* ---------- eventos ---------- */
+
+  function conectar() {
+    document.addEventListener('input', function (e) {
+      if (e.target.classList && e.target.classList.contains('money')) {
+        formatearMoney(e.target);
+        if (e.target.id === 'tasaUsd') $('#tasaUsdEspejo').value = e.target.value;
+        if (e.target.id === 'tasaUsdEspejo') $('#tasaUsd').value = e.target.value;
+      }
+      if (e.target.closest && e.target.closest('.layout')) render();
+    });
+    document.addEventListener('change', function (e) {
+      if (e.target.id === 'destino') {
+        var op = e.target.selectedOptions[0];
+        if (op && op.dataset.moneda) {
+          $('#monedaPrograma').value = op.dataset.moneda;
+          $('#monedaFondos').value = op.dataset.moneda;
+        }
+        $('#destinoOtro').hidden = false;
+      }
+      if (e.target.dataset && e.target.dataset.pago != null) {
+        Store.marcarPago(e.target.dataset.pago, e.target.checked);
+        renderIndicadores();
+        aviso(e.target.checked ? 'Pago registrado' : 'Pago desmarcado');
+      }
+      if (e.target.closest && e.target.closest('.layout')) render();
+    });
+
+    $$('.tab').forEach(function (b) { b.addEventListener('click', function () { irA(b.dataset.tab); }); });
+    $$('[data-modo-btn]').forEach(function (b) { b.addEventListener('click', function () { setModo(b.dataset.modoBtn); }); });
+    $$('[data-apoyo]').forEach(function (b) {
+      b.addEventListener('click', function () { setApoyo(b.dataset.apoyo === 'si'); render(); });
+    });
+
+    $('#btn-meses-auto').addEventListener('click', function () { $('#mesesOverride').value = ''; render(); });
+    $('#btn-desbloquear-usd').addEventListener('click', function () {
+      if (!confirm('La opción de USD es un cierre de último recurso.\n¿Confirmas que el estudiante no puede cubrir la reserva hoy?')) return;
+      setUsd(true);
+      render();
+    });
+    $('#btn-bloquear-usd').addEventListener('click', function () { setUsd(false); render(); });
+
+    $$('[data-elegir]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        estado.decision = b.dataset.elegir;
+        if (estado.decision === 'seguimiento' && !$('#proximaGestion').value) {
+          aviso('Agenda la fecha de próxima revisión');
+          $('#proximaGestion').focus();
+        }
+        render();
+        aviso('Decisión: ' + Res.etiquetaDecision(estado.decision));
+      });
+    });
+
+    $('#btn-guardar').addEventListener('click', guardar);
+    $('#btn-nuevo').addEventListener('click', nuevo);
+    $('#btn-imprimir').addEventListener('click', function () { window.print(); });
+    $('#btn-copiar').addEventListener('click', function () { copiar(resumenTexto(false), 'Resumen copiado'); });
+
+    $('#btn-descargar').addEventListener('click', function () {
+      var d = leerDatos();
+      var base = 'diagnostico-' + (d.estudiante || 'estudiante').toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + d.hoy;
+      descargar(base + '.txt', resumenTexto(false));
+      aviso('Resumen descargado');
+    });
+
+    $('#btn-whatsapp').addEventListener('click', function () {
+      var d = leerDatos();
+      var tel = normalizarTel(d.telefono);
+      var url = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(resumenTexto(true));
+      window.open(url, '_blank', 'noopener');
+    });
+
+    $('#btn-correo').addEventListener('click', function () {
+      var d = leerDatos();
+      var asunto = 'Resumen de tu asesoría — ' + (d.destinoFinal || 'proyecto de estudio');
+      window.location.href = 'mailto:' + encodeURIComponent(d.correo) + '?subject=' + encodeURIComponent(asunto) + '&body=' + encodeURIComponent(resumenTexto(false));
+    });
+
+    $('#btn-exportar-csv').addEventListener('click', function () {
+      var regs = Store.registros();
+      if (!regs.length) return aviso('No hay diagnósticos para exportar');
+      descargar('indicadores-solvencia-' + hoyISO() + '.csv', '﻿' + Res.csv(regs), 'text/csv');
+      aviso('CSV exportado');
+    });
+
+    $('#btn-exportar-json').addEventListener('click', function () {
+      descargar('respaldo-solvencia-' + hoyISO() + '.json', JSON.stringify(Store.registros(), null, 2), 'application/json');
+      aviso('Respaldo descargado');
+    });
+
+    $('#input-importar').addEventListener('change', function (e) {
+      var f = e.target.files[0];
+      if (!f) return;
+      var fr = new FileReader();
+      fr.onload = function () {
+        try {
+          Store.importar(JSON.parse(fr.result));
+          renderIndicadores();
+          aviso('Respaldo importado');
+        } catch (err) { aviso('El archivo no es un respaldo válido'); }
+      };
+      fr.readAsText(f);
+      e.target.value = '';
+    });
+
+    document.addEventListener('click', function (e) {
+      var abrir = e.target.dataset && e.target.dataset.abrir;
+      var borrar = e.target.dataset && e.target.dataset.borrar;
+      if (abrir) {
+        var reg = Store.registros().find(function (r) { return r.id === abrir; });
+        if (reg && reg.datos) { escribirDatos(reg.datos); render(); irA('proyecto'); aviso('Diagnóstico cargado'); }
+      }
+      if (borrar && confirm('¿Borrar este diagnóstico del registro local?')) {
+        Store.borrarRegistro(borrar);
+        renderIndicadores();
+        aviso('Diagnóstico borrado');
+      }
+    });
+  }
+
+  /* ---------- arranque ---------- */
+
+  function iniciar() {
+    if (!document.body.dataset.modo) document.body.dataset.modo = 'asesor';
+    poblarCatalogos();
+    conectar();
+
+    var borrador = Store.leerBorrador();
+    var prefs = Store.leerPrefs();
+    if (borrador) {
+      escribirDatos(borrador);
+    } else {
+      $('#asesor').value = prefs.asesor || '';
+      setMoney('tasaUsd', prefs.tasaUsd || 0);
+      setMoney('tasaEur', prefs.tasaEur || 0);
+      $('#fechaTasa').value = prefs.fechaTasa || hoyISO();
+    }
+    $('#tasaUsdEspejo').value = $('#tasaUsd').value;
+    if (!Store.disponible()) aviso('Este navegador no permite guardar datos locales: usa Descargar para no perder el resumen.');
+
+    render();
+    renderIndicadores();
+  }
+
+  document.addEventListener('DOMContentLoaded', iniciar);
+})();
+
+</script>
